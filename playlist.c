@@ -43,7 +43,7 @@ char *playlist(char *cmd, char *file)
 		act = 1;
 	else if (act < 1)
 		act = size;
-	writestr(logfd, "Playlist ops: add=");
+	writestr(logfd, "playlist: add=");
 	writedec(logfd, add);
 	writestr(logfd, " del=");
 	writedec(logfd, del);
@@ -55,8 +55,6 @@ char *playlist(char *cmd, char *file)
 	unlink("omxd.play");
 	int playfd = creat("omxd.play", 0644);
 	FILE *play = fdopen(playfd, "w");
-	writedec(logfd, bakfd);
-	writedec(logfd, playfd);
 	int i = 1;
 	char line[LINE_LENGTH];
 	while (i <= size) {
@@ -72,7 +70,7 @@ char *playlist(char *cmd, char *file)
 		if (line_from_bak != NULL)
 			insert_line(play, line, i == act, &i);
 	}
-	writestr(logfd, " Playing: ");
+	writestr(logfd, "playlist: Playing: ");
 	writestr(logfd, file_playing);
 	writestr(logfd, " size=");
 	writedec(logfd, size);

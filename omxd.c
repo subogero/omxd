@@ -36,17 +36,17 @@ int main(int argc, char *argv[])
 		if (cmdfd < 0) {
 			cmdfd = open("omxd.cmd", O_RDONLY);
 			if (cmdfd < 0) {
-				writestr(logfd, "Can't open omxd.cmd\n");
+				writestr(logfd, "main: Can't open omxd.cmd\n");
 				return 7;
 			} else {
-				writestr(logfd, "Client opened omxd.cmd\n");
+				writestr(logfd, "main: Client opened omxd.cmd\n");
 				continue;
 			}
 		}
 		char line[LINE_LENGTH];
 		int len = read(cmdfd, line, LINE_MAX);
 		if (len == 0) {
-			writestr(logfd, "Client closed omxd.cmd\n");
+			writestr(logfd, "main: Client closed omxd.cmd\n");
 			close(cmdfd);
 			cmdfd = -1;
 			continue;
@@ -106,14 +106,14 @@ static int daemonize(void)
 	if (logfd < 0)
 		return 4;
 	writedec(logfd, sid);
-	if (writestr(logfd, " omxd started\n") == 0)
+	if (writestr(logfd, " daemonize: omxd started\n") == 0)
 		return 5;
 	/* Create and open FIFO for command input as stdin */
 	unlink("omxd.cmd");
-	writestr(logfd, "Deleted original omxd.cmd FIFO\n");
+	writestr(logfd, "daemonize: Deleted original omxd.cmd FIFO\n");
 	if (mknod("omxd.cmd", S_IFIFO | 0666, 0) < 0)
 		return 6;
-	writestr(logfd, "Created new omxd.cmd FIFO\n");
+	writestr(logfd, "daemonize: Created new omxd.cmd FIFO\n");
 	return 0;
 }
 
@@ -173,14 +173,15 @@ static int player(char *cmd, char *file)
 			argv[1] = "-olocal";
 			argv[2] = file;
 			argv[3] = NULL;
+			writestr(logfd, "player child: ");
 			writestr(logfd, file);
 			writestr(logfd, "\n");
 			execve(argv[0], argv, NULL);
-			writestr(logfd, "Unable to exec omxplayer\n");
+			writestr(logfd, "player child: to exec omxplayer\n");
 			exit(20);
 		}
 	} else if (player_pid != 0) {
-		writestr(logfd, "Send command to omxplayer: ");
+		writestr(logfd, "player parent: Send command to omxplayer: ");
 		writestr(logfd, cmd);
 		write(logfd, "\n", 1);
 		if      (*cmd == 'F')
@@ -201,10 +202,10 @@ static void player_quit(int signum)
 	wait(NULL);
 	close(ctrlpipe[1]);
 	player_pid = 0;
-	writestr(logfd, "omxplayer has quit\n");
+	writestr(logfd, "player_quit: omxplayer has quit\n");
 	if (signum == SIGCHLD) {
 		player("n", playlist("n", NULL));
-		writestr(logfd, "Next file started\n");
+		writestr(logfd, "player_quit: Next file started\n");
 	}
 }
 
