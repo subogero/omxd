@@ -1,0 +1,22 @@
+Playlist commands mimic vi.
+Others are mostly the same as the omxplayer interactive hotkeys.
+
+i file	insert to playlist before current item
+I file	interrupt playlist, play file, then continue playlist
+a file	add to playlist after current item
+A file	append to end of playlist
+.	replay current item
+n	next
+N	previous
+
+f	forward 30s
+r	rewind  30s
+F	forward 600s
+R	rewind  600s
+p	play/pause
+k	next audio stream
+o	next chapter
+m	next subtitle stream
+s	toggle subtitles
+-	volume down
++	volume up

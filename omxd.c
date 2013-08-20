@@ -1,19 +1,26 @@
-/* (c) SZABO Gergely <szg@subogero.com>, license WTFPL 2.0 */
+/* (c) SZABO Gergely <szg@subogero.com>, license GPLv3 */
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <signal.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define LINE_LENGTH 256
 #define LINE_MAX (LINE_LENGTH - 1)
 
 int logfd;
+static int ctrlpipe[2];
+static pid_t player_pid = 0;
+static char file_playing[256];
 
 static int client(int argc, char *argv[]);
 static int daemonize(void);
-static int interpret(char *line);
+static int parse(char *line);
+static int player(char *cmd, char *file);
+static void player_quit(int signum);
 static int writedec(int fd, int num);
 static int writestr(int fd, char *str);
 
@@ -55,8 +62,7 @@ int main(int argc, char *argv[])
 		if (lf != NULL) {
 			*lf = 0;
 		}
-		if (interpret(line) == 'q')
-			break;
+		parse(line);
 	}
 	return 0;
 }
@@ -117,14 +123,15 @@ static int daemonize(void)
 }
 
 /* Get command char and file/URL name from a command line */
-static int interpret(char *line)
+static int parse(char *line)
 {
 	/* Extract command and file/URL from line */
 	char *cmd = NULL;
 	char *file = line;
 	while (1) {
 		if (*file == 0) {
-			file = NULL;
+			if (cmd == NULL)
+				cmd = line;
 			break;
 		} else if (*file == ' ' || *file == '\t') {
 			if (cmd == NULL) {
@@ -136,12 +143,70 @@ static int interpret(char *line)
 		}
 		file++;
 	}
-	writestr(logfd, "Command: ");
-	writestr(logfd, cmd != NULL ? cmd : "");
-	writestr(logfd, "  File: ");
-	writestr(logfd, file);
-	writestr(logfd, "\n");
+	if (cmd != NULL)
+		player(cmd, file);
 	return cmd != NULL ? *cmd : 0;
+}
+
+/* Control the actual omxplayer */
+static int player(char *cmd, char *file)
+{
+	if (*file != 0) {
+		if (player_pid != 0) {
+			write(ctrlpipe[1], "q", 1);
+			player_quit(SIGCHLD);
+		}
+		strcpy(file_playing, file);
+		pipe(ctrlpipe);
+		player_pid = fork();
+		if (player_pid < 0) {
+			player_pid = 0;
+			close(ctrlpipe[0]);
+			close(ctrlpipe[1]);
+		} else if (player_pid > 0) {
+			close(ctrlpipe[0]);
+			signal(SIGCHLD, player_quit);
+		} else {
+			close(ctrlpipe[1]);
+			if (logfd == 0)
+				logfd = dup(logfd);
+			close(0);
+			dup(ctrlpipe[0]);
+			close(ctrlpipe[0]);
+			char *argv[4];
+			argv[0] = "/usr/bin/omxplayer";
+			argv[1] = "-olocal";
+			argv[2] = file_playing;
+			argv[3] = NULL;
+			writestr(logfd, file_playing);
+			writestr(logfd, "\n");
+			execve(argv[0], argv, NULL);
+			writestr(logfd, "Unable to exec omxplayer\n");
+			exit(20);
+		}
+	} else if (player_pid != 0) {
+		writestr(logfd, "Send command to omxplayer: ");
+		writestr(logfd, cmd);
+		write(logfd, "\n", 1);
+		if      (*cmd == 'F')
+			strcpy(cmd, "\033[A");
+		else if (*cmd == 'R')
+			strcpy(cmd, "\033[B");
+		else if (*cmd == 'f')
+			strcpy(cmd, "\033[C");
+		else if (*cmd == 'r')
+			strcpy(cmd, "\033[D");
+		writestr(ctrlpipe[1], cmd);
+	}
+}
+
+/* Signal handler for SIGCHLD when player exits */
+static void player_quit(int signum)
+{
+	wait(NULL);
+	close(ctrlpipe[1]);
+	player_pid = 0;
+	writestr(logfd, "omxplayer has quit\n");
 }
 
 /* Write number in decimal format to file descriptor, printf() is BLOATED!!! */
