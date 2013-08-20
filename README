@@ -8,6 +8,10 @@ A file	append to end of playlist
 .	replay current item
 n	next
 N	previous
+x	delete current item from playlist, play next
+X	delete entire playlist
+d	next directory
+D	previous directory
 
 f	forward 30s
 r	rewind  30s
