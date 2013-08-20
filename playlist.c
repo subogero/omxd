@@ -36,8 +36,8 @@ char *playlist(char *cmd, char *file)
 	case 'a': add = i_list+1; del = 0,      act = i_list;  size++; break;
 	case 'A': add = size+1;   del = 0;      act = i_list;  size++; break;
 	case 'x': add = 0;        del = i_list; act = i_list;  size--; break;
-	case 'n': add = 0;        del = 0;      act = i_list-1;        break;
-	case 'N': add = 0;        del = 0;      act = i_list+1;        break;
+	case 'n': add = 0;        del = 0;      act = i_list+1;        break;
+	case 'N': add = 0;        del = 0;      act = i_list-1;        break;
 	}
 	if (act > size)
 		act = 1;
@@ -107,16 +107,21 @@ static void init_list(void)
 /* Insert a line into the playlist file */
 static void insert_line(FILE *play, char *line, int activate, int *i)
 {
+	/* Strip > indicator and LF */
 	if (strstr(line, ">\t") == line)
 		line += 2;
+	char *lf = strchr(line, '\n');
+	if (lf != NULL)
+		*lf = 0;
+	/* If active, update state, add leading > indicator */
 	if (activate) {
-		fputs(">\t", play);
 		strcpy(file_playing, line);
 		i_list = *i;
+		fputs(">\t", play);
 	}
-	char *lf = strchr(line, '\n');
-	if (lf == NULL)
-		strcat(line, "\n");
+	/* Add LF, print to file */
+	strcat(line, "\n");
 	fputs(line, play);
+	/* Increment line counter */
 	(*i)++;
 }
