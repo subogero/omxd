@@ -149,6 +149,7 @@ static int player(char *cmd, char *file)
 {
 	if (file != NULL && *file != 0) {
 		if (player_pid != 0) {
+			signal(SIGCHLD, SIG_DFL);
 			write(ctrlpipe[1], "q", 1);
 			player_quit(0);
 		}
@@ -199,10 +200,17 @@ static int player(char *cmd, char *file)
 /* Signal handler for SIGCHLD when player exits */
 static void player_quit(int signum)
 {
-	wait(NULL);
+	int status;
+	pid_t pid = wait(&status);
 	close(ctrlpipe[1]);
+	writestr(logfd, "player_quit: Real PID: ");
+	writedec(logfd, pid);
+	writestr(logfd, ", Stored PID: ");
+	writedec(logfd, player_pid);
+	writestr(logfd, ", Exit status: ");
+	writedec(logfd, WEXITSTATUS(status));
+	writestr(logfd, "\n");
 	player_pid = 0;
-	writestr(logfd, "player_quit: omxplayer has quit\n");
 	if (signum == SIGCHLD) {
 		player("n", playlist("n", NULL));
 		writestr(logfd, "player_quit: Next file started\n");
