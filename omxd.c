@@ -181,7 +181,7 @@ static int player(char *cmd, char *file)
 			writestr(logfd, "player child: to exec omxplayer\n");
 			exit(20);
 		}
-	} else if (player_pid != 0) {
+	} else if (strchr(OMX_CMDS, *cmd) != NULL && player_pid != 0) {
 		writestr(logfd, "player parent: Send command to omxplayer: ");
 		writestr(logfd, cmd);
 		write(logfd, "\n", 1);
