@@ -11,6 +11,7 @@ static int size = 0;
 static char file_playing[LINE_LENGTH] = { 0, };
 
 static void init_list(void);
+static void rewrite_list(int add, int del, int act, char *file, int orig_size);
 static void insert_line(FILE *play, char *file, int activate, int *i);
 /*
  * Manipulate the playlist, adding/removing files at various positions.
@@ -22,14 +23,22 @@ char *playlist(char *cmd, char *file)
 	if (i_list == -1)
 		init_list();
 	/* Special cases when there is nothing to do */
-	if (cmd == NULL || strchr("iIaA.nNxX", *cmd) == NULL)
+	if (cmd == NULL || strchr(LIST_CMDS, *cmd) == NULL)
 		return NULL;
 	if (*cmd == 'I')
 		return file;
 	if (*cmd == '.')
 		return file_playing;
+	if (*cmd == 'X') {
+		unlink("omxd.play");
+		size = 0;
+		i_list = 0;
+		*file_playing = 0;
+		return file_playing;
+	}
 	if (size == 0 && *cmd == 'i')
 		*cmd = 'a';
+	int orig_size = size;
 	int add, del, act;
 	switch (*cmd) {
 	case 'i': add = i_list;   del = 0;      act = i_list;  size++; break;
@@ -50,26 +59,7 @@ char *playlist(char *cmd, char *file)
 	writestr(logfd, " act=");
 	writedec(logfd, act);
 	writestr(logfd, "\n");
-	int bakfd = open("omxd.play", O_RDONLY);
-	FILE *bak = fdopen(bakfd, "r");
-	unlink("omxd.play");
-	int playfd = creat("omxd.play", 0644);
-	FILE *play = fdopen(playfd, "w");
-	int i = 1;
-	char line[LINE_LENGTH];
-	while (i <= size) {
-		char *line_from_bak = NULL;
-		if (bak != NULL)
-			line_from_bak = fgets(line, LINE_LENGTH, bak);
-		if (i == add) {
-			insert_line(play, file, i == act, &i);
-		} else if (i == del) {
-			del = 0;
-			continue;
-		}
-		if (line_from_bak != NULL)
-			insert_line(play, line, i == act, &i);
-	}
+	rewrite_list(add, del, act, file, orig_size);
 	writestr(logfd, "playlist: Playing: ");
 	writestr(logfd, file_playing);
 	writestr(logfd, " size=");
@@ -77,9 +67,6 @@ char *playlist(char *cmd, char *file)
 	writestr(logfd, " index=");
 	writedec(logfd, i_list);
 	writestr(logfd, "\n");
-	if (bak != NULL)
-		fclose(bak);
-	fclose(play);
 	return size == 1          ? file_playing
 	     : strchr("aA", *cmd) ? NULL
 	     :                      file_playing;
@@ -101,6 +88,61 @@ static void init_list(void)
 			strcpy(file_playing, line + 2);
 		}
 	}
+	fclose(play);
+}
+
+/* Rewrite list and adjust internal state */
+static void rewrite_list(int add, int del, int act, char *file, int orig_size)
+{
+	FILE *bak = fopen("omxd.play", "r");
+	unlink("omxd.play");
+	FILE *play = fopen("omxd.play", "w");
+	if (play == NULL) {
+		if (bak != NULL)
+			fclose(bak);
+		writestr(logfd, "playlist: could not open omxd.play\n");
+		return;
+	}
+	int i = 1;
+	int old_size = 0;
+	char line[LINE_LENGTH];
+	while (i <= size) {
+		/* Read a line from old play file, count lines, new size */
+		char *line_from_bak = NULL;
+		if (bak != NULL) {
+			line_from_bak = fgets(line, LINE_LENGTH, bak);
+			old_size += line_from_bak != NULL;
+		}
+		/* Check for grow/shrink by someone else, adjust state */
+		if (line_from_bak != NULL) {
+			if (old_size > orig_size) {
+				if (add == size)
+					add++;
+				size++;
+				writestr(logfd, "playlist: external grow\n");
+			}
+		} else if (orig_size != old_size) {
+			size += old_size - orig_size;
+			del = 0;
+			if (add > size)
+				add = size;
+			if (i_list > size)
+				i_list = size;
+			writestr(logfd, "playlist: external shrink\n");
+		}
+		/* Add or delete a line */
+		if (i == add) {
+			insert_line(play, file, i == act, &i);
+		} else if (i == del) {
+			del = 0;
+			continue;
+		}
+		/* Print original line to new play file */
+		if (line_from_bak != NULL)
+			insert_line(play, line, i == act, &i);
+	}
+	if (bak != NULL)
+		fclose(bak);
 	fclose(play);
 }
 
