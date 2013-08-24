@@ -52,21 +52,11 @@ char *playlist(char *cmd, char *file)
 		act = 1;
 	else if (act < 1)
 		act = size;
-	writestr(logfd, "playlist: add=");
-	writedec(logfd, add);
-	writestr(logfd, " del=");
-	writedec(logfd, del);
-	writestr(logfd, " act=");
-	writedec(logfd, act);
-	writestr(logfd, "\n");
+	void *vals[] = { &add, &del, &act };
+	printfd(logfd, "playlist: add=%d del=%d act=%d\n", vals);
 	rewrite_list(add, del, act, file, orig_size);
-	writestr(logfd, "playlist: Playing: ");
-	writestr(logfd, file_playing);
-	writestr(logfd, " size=");
-	writedec(logfd, size);
-	writestr(logfd, " index=");
-	writedec(logfd, i_list);
-	writestr(logfd, "\n");
+	vals[0] = &file_playing; vals[1] = &size; vals[2] = &i_list;
+	printfd(logfd, "playlist: Playing: %s size=%d index=%d\n", vals);
 	return size == 1          ? file_playing
 	     : strchr("aA", *cmd) ? NULL
 	     :                      file_playing;

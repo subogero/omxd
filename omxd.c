@@ -85,9 +85,8 @@ static int daemonize(void)
 	if (pid < 0)
 		return 1;
 	if (pid > 0) {
-		writestr(1, "omxd daemon started, PID ");
-		writedec(1, pid);
-		writestr(1, "\n");
+		void *vals[] = { "PID", &pid };
+		printfd(1, "omxd daemon started, %s %d\n", vals);
 		return -1;
 	}
 	/* umask and session ID */
@@ -105,8 +104,8 @@ static int daemonize(void)
 	logfd = creat("omxd.log", 0644);
 	if (logfd < 0)
 		return 4;
-	writedec(logfd, sid);
-	if (writestr(logfd, " daemonize: omxd started\n") == 0)
+	void *vals[] = { &sid };
+	if (printfd(logfd, "daemonize: omxd started, SID %d\n", vals) == 0)
 		return 5;
 	/* Create and open FIFO for command input as stdin */
 	unlink("omxd.cmd");
@@ -202,14 +201,10 @@ static void player_quit(int signum)
 {
 	int status;
 	pid_t pid = wait(&status);
+	status = WEXITSTATUS(status);
 	close(ctrlpipe[1]);
-	writestr(logfd, "player_quit: Real PID: ");
-	writedec(logfd, pid);
-	writestr(logfd, ", Stored PID: ");
-	writedec(logfd, player_pid);
-	writestr(logfd, ", Exit status: ");
-	writedec(logfd, WEXITSTATUS(status));
-	writestr(logfd, "\n");
+	void *vals[] = { &pid, &player_pid, &status };
+	printfd(logfd, "player_quit: PID: %d, Stored PID: %d, with %d\n", vals);
 	player_pid = 0;
 	if (signum == SIGCHLD) {
 		player("n", playlist("n", NULL));
@@ -245,4 +240,31 @@ int writestr(int fd, char *str)
 {
 	int len = strlen(str);
 	return write(fd, str, len);
+}
+
+/* Formatted printing into a file descriptor */
+int printfd(int fd, char *fmt, void *vals[])
+{
+	int bytes = 0;
+	int i_val = 0;
+	while (*fmt) {
+		char *perc = strchr(fmt, '%');
+		int len = perc == NULL ? strlen(fmt) : perc - fmt;
+		if (len) {
+			bytes += write(fd, fmt, len);
+			fmt += len;
+		} else {
+			fmt = perc + 1;
+			if (*fmt == 0)
+				continue;
+			else if (*fmt == '%')
+				bytes += write(fd, fmt, 1);
+			else if (*fmt == 'd')
+				bytes += writedec(fd, *(int*)vals[i_val++]);
+			else if (*fmt == 's')
+				bytes += writestr(fd, (char*)vals[i_val++]);
+			fmt++;
+		}
+	}
+	return bytes;
 }

@@ -9,6 +9,7 @@
 extern int logfd; /* logfile descriptor */
 int writedec(int fd, int num);
 int writestr(int fd, char *str);
+int printfd(int fd, char *fmt, void *vals[]);
 
 /* From playlist.c */
 char *playlist(char *cmd, char *file);
