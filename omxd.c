@@ -7,6 +7,7 @@
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include "omxd.h"
 
 int logfd;
@@ -85,8 +86,7 @@ static int daemonize(void)
 	if (pid < 0)
 		return 1;
 	if (pid > 0) {
-		void *vals[] = { "PID", &pid };
-		printfd(1, "omxd daemon started, %s %d\n", vals);
+		printfd(1, "omxd daemon started, PID %d\n", pid);
 		return -1;
 	}
 	/* umask and session ID */
@@ -104,8 +104,7 @@ static int daemonize(void)
 	logfd = creat("omxd.log", 0644);
 	if (logfd < 0)
 		return 4;
-	void *vals[] = { &sid };
-	if (printfd(logfd, "daemonize: omxd started, SID %d\n", vals) == 0)
+	if (printfd(logfd, "daemonize: omxd started, SID %d\n", sid) == 0)
 		return 5;
 	/* Create and open FIFO for command input as stdin */
 	unlink("omxd.cmd");
@@ -203,8 +202,7 @@ static void player_quit(int signum)
 	pid_t pid = wait(&status);
 	status = WEXITSTATUS(status);
 	close(ctrlpipe[1]);
-	void *vals[] = { &pid, &player_pid, &status };
-	printfd(logfd, "player_quit: PID: %d, Stored PID: %d, with %d\n", vals);
+	printfd(logfd, "player_quit: PID=%d (%d) with %d\n", pid, player_pid, status);
 	player_pid = 0;
 	if (signum == SIGCHLD) {
 		player("n", playlist("n", NULL));
@@ -243,10 +241,12 @@ int writestr(int fd, char *str)
 }
 
 /* Formatted printing into a file descriptor */
-int printfd(int fd, char *fmt, void *vals[])
+int printfd(int fd, char *fmt, ...)
 {
 	int bytes = 0;
 	int i_val = 0;
+	va_list va;
+	va_start(va, fmt);
 	while (*fmt) {
 		char *perc = strchr(fmt, '%');
 		int len = perc == NULL ? strlen(fmt) : perc - fmt;
@@ -260,11 +260,12 @@ int printfd(int fd, char *fmt, void *vals[])
 			else if (*fmt == '%')
 				bytes += write(fd, fmt, 1);
 			else if (*fmt == 'd')
-				bytes += writedec(fd, *(int*)vals[i_val++]);
+				bytes += writedec(fd, va_arg(va, int));
 			else if (*fmt == 's')
-				bytes += writestr(fd, (char*)vals[i_val++]);
+				bytes += writestr(fd, va_arg(va, char*));
 			fmt++;
 		}
 	}
+	va_end(va);
 	return bytes;
 }
