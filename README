@@ -1,5 +1,20 @@
-Playlist commands mimic vi.
-Others are mostly the same as the omxplayer interactive hotkeys.
+omxd daemon to maintain a playlist and play it via omxplayer
+============================================================
+
+The omxd daemon plays your playlist even if you've disconnected from your
+Raspberry Pi, to allow the easy implementation of various media centre
+applications.
+Typically, start omxd from the /etc/rc.local stript at boot time.
+
+COMMANDS
+--------
+omxd listens for commands through the /var/run/omxctl FIFO,
+please write one command at a time into it, for example:
+
+echo A /home/foo/bar.mp3 > /var/run/omxctl
+
+Playlist commands mimic vi. Files shall be absolute paths or URLs
+playable by omxplayer.
 
 i file	insert to playlist before current item
 I file	interrupt playlist, play file, then continue playlist
@@ -10,8 +25,8 @@ n	next
 N	previous
 x	delete current item from playlist, play next
 X	delete entire playlist
-d	next directory
-D	previous directory
+
+Others commands are mostly the same as the omxplayer interactive hotkeys.
 
 f	forward 30s
 r	rewind  30s
@@ -24,3 +39,13 @@ m	next subtitle stream
 s	toggle subtitles
 -	volume down
 +	volume up
+
+FILES
+-----
+The files below are created in /var/run/ when omxd is started by root
+during boot. But if you start it manually by yourself, all files are created
+in the current directory to allow easier testing.
+
+/var/run/omxctl 	FIFO to write commands into
+/var/run/omxplay	playlist file, actual item indicated by >
+/var/run/omxlog		log file

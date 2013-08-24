@@ -30,7 +30,7 @@ char *playlist(char *cmd, char *file)
 	if (*cmd == '.')
 		return file_playing;
 	if (*cmd == 'X') {
-		unlink("omxd.play");
+		unlink("omxplay");
 		size = 0;
 		i_list = 0;
 		*file_playing = 0;
@@ -65,7 +65,7 @@ static void init_list(void)
 {
 	i_list = 0;
 	size = 0;
-	FILE *play = fopen("omxd.play", "r");
+	FILE *play = fopen("omxplay", "r");
 	if (play == NULL)
 		return;
 	char line[LINE_LENGTH];
@@ -82,13 +82,13 @@ static void init_list(void)
 /* Rewrite list and adjust internal state */
 static void rewrite_list(int add, int del, int act, char *file, int orig_size)
 {
-	FILE *bak = fopen("omxd.play", "r");
-	unlink("omxd.play");
-	FILE *play = fopen("omxd.play", "w");
+	FILE *bak = fopen("omxplay", "r");
+	unlink("omxplay");
+	FILE *play = fopen("omxplay", "w");
 	if (play == NULL) {
 		if (bak != NULL)
 			fclose(bak);
-		writestr(logfd, "playlist: could not open omxd.play\n");
+		writestr(logfd, "playlist: could not open omxplay\n");
 		return;
 	}
 	int i = 1;

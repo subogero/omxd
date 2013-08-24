@@ -35,19 +35,19 @@ int main(int argc, char *argv[])
 	int cmdfd = -1;
 	while (1) {
 		if (cmdfd < 0) {
-			cmdfd = open("omxd.cmd", O_RDONLY);
+			cmdfd = open("omxctl", O_RDONLY);
 			if (cmdfd < 0) {
-				writestr(logfd, "main: Can't open omxd.cmd\n");
+				writestr(logfd, "main: Can't open omxctl\n");
 				return 7;
 			} else {
-				writestr(logfd, "main: Client opened omxd.cmd\n");
+				writestr(logfd, "main: Client opened omxctl\n");
 				continue;
 			}
 		}
 		char line[LINE_LENGTH];
 		int len = read(cmdfd, line, LINE_MAX);
 		if (len == 0) {
-			writestr(logfd, "main: Client closed omxd.cmd\n");
+			writestr(logfd, "main: Client closed omxctl\n");
 			close(cmdfd);
 			cmdfd = -1;
 			continue;
@@ -66,13 +66,13 @@ int main(int argc, char *argv[])
 /* Simple client */
 static int client(int argc, char *argv[])
 {
-	int cmdfd = open("/var/run/omxd.cmd", O_WRONLY|O_NONBLOCK);
+	int cmdfd = open("/var/run/omxctl", O_WRONLY|O_NONBLOCK);
 	if (cmdfd < 0) {
-		writestr(2, "Can't open /var/run/omxd.cmd\n");
+		writestr(2, "Can't open /var/run/omxctl\n");
 		return 10;
 	}
 	if (writestr(cmdfd, argv[1]) == 0) {
-		writestr(2, "Can't write /var/run/omxd.cmd\n");
+		writestr(2, "Can't write /var/run/omxctl\n");
 		return 11;
 	}
 	return 0;
@@ -94,24 +94,24 @@ static int daemonize(void)
 	pid_t sid = setsid();
 	if (sid < 0)
 		return 2;
-	/* Run in erm... /var/run */
-	//if (chdir("/var/run/") < 0)
-	//	return 3;
+	/* Run in /var/run if invoked as root, or allow testing in CWD */
+	if (getuid() == 0 && chdir("/var/run/") < 0)
+		return 3;
 	/* Create log file as stdout and stderr */
 	close(0);
 	close(1);
 	close(2);
-	logfd = creat("omxd.log", 0644);
+	logfd = creat("omxlog", 0644);
 	if (logfd < 0)
 		return 4;
 	if (printfd(logfd, "daemonize: omxd started, SID %d\n", sid) == 0)
 		return 5;
 	/* Create and open FIFO for command input as stdin */
-	unlink("omxd.cmd");
-	writestr(logfd, "daemonize: Deleted original omxd.cmd FIFO\n");
-	if (mknod("omxd.cmd", S_IFIFO | 0666, 0) < 0)
+	unlink("omxctl");
+	writestr(logfd, "daemonize: Deleted original omxctl FIFO\n");
+	if (mknod("omxctl", S_IFIFO | 0666, 0) < 0)
 		return 6;
-	writestr(logfd, "daemonize: Created new omxd.cmd FIFO\n");
+	writestr(logfd, "daemonize: Created new omxctl FIFO\n");
 	return 0;
 }
 
