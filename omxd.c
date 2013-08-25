@@ -6,7 +6,6 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <string.h>
-#include <stdlib.h>
 #include <stdarg.h>
 #include "omxd.h"
 
@@ -153,15 +152,16 @@ static int player(char *cmd, char *file)
 		}
 		pipe(ctrlpipe);
 		player_pid = fork();
-		if (player_pid < 0) {
+		if (player_pid < 0) { /* Fork error */
 			player_pid = 0;
 			close(ctrlpipe[0]);
 			close(ctrlpipe[1]);
-		} else if (player_pid > 0) {
+		} else if (player_pid > 0) { /* Parent: set SIGCHLD handler */
 			close(ctrlpipe[0]);
 			signal(SIGCHLD, player_quit);
-		} else {
+		} else { /* Child: exec omxplayer */
 			close(ctrlpipe[1]);
+			/* Redirect read end of control pipe to 0 stdin */
 			if (logfd == 0)
 				logfd = dup(logfd);
 			close(0);
@@ -172,17 +172,15 @@ static int player(char *cmd, char *file)
 			argv[1] = "-olocal";
 			argv[2] = file;
 			argv[3] = NULL;
-			writestr(logfd, "player child: ");
-			writestr(logfd, file);
-			writestr(logfd, "\n");
+			printfd(logfd, "player child: %s\n", file);
 			execve(argv[0], argv, NULL);
-			writestr(logfd, "player child: to exec omxplayer\n");
-			exit(20);
+			writestr(logfd, "player child: Can't exec omxplayer\n");
+			_exit(20);
 		}
 	} else if (strchr(OMX_CMDS, *cmd) != NULL && player_pid != 0) {
-		writestr(logfd, "player parent: Send command to omxplayer: ");
-		writestr(logfd, cmd);
-		write(logfd, "\n", 1);
+		printfd(logfd, "player parent: Send %s to omxplayer\n", cmd);
+		cmd[1] = 0; /* Just one character normally */
+		/* Replace FRfr with arrow-key escape sequences */
 		if      (*cmd == 'F')
 			strcpy(cmd, "\033[A");
 		else if (*cmd == 'R')
