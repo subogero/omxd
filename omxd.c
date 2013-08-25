@@ -109,7 +109,7 @@ static int daemonize(void)
 	/* Create and open FIFO for command input as stdin */
 	unlink("omxctl");
 	writestr(logfd, "daemonize: Deleted original omxctl FIFO\n");
-	if (mknod("omxctl", S_IFIFO | 0666, 0) < 0)
+	if (mknod("omxctl", S_IFIFO | 0622, 0) < 0)
 		return 6;
 	writestr(logfd, "daemonize: Created new omxctl FIFO\n");
 	return 0;
