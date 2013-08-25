@@ -18,6 +18,7 @@ static int daemonize(void);
 static int parse(char *line);
 static int player(char *cmd, char *file);
 static void player_quit(int signum); /* SIGCHLD signal handler */
+static char *get_output(char *cmd);
 
 int main(int argc, char *argv[])
 {
@@ -169,7 +170,7 @@ static int player(char *cmd, char *file)
 			close(ctrlpipe[0]);
 			char *argv[4];
 			argv[0] = "/usr/bin/omxplayer";
-			argv[1] = "-olocal";
+			argv[1] = get_output(cmd);
 			argv[2] = file;
 			argv[3] = NULL;
 			printfd(logfd, "player child: %s\n", file);
@@ -206,6 +207,26 @@ static void player_quit(int signum)
 		player("n", playlist("n", NULL));
 		writestr(logfd, "player_quit: Next file started\n");
 	}
+}
+
+/* Return omxplayer argument to set output interface (Jack/HDMI) */
+static char *get_output(char *cmd)
+{
+	enum e_outputs                 { OUT_JACK,  OUT_HDMI };
+	static char *outputs[] = { "-olocal", "-ohdmi" };
+	static enum e_outputs output = OUT_JACK;
+	enum e_outputs output_now;
+	if      (*cmd == 'h')
+		output_now = output = OUT_HDMI;
+	else if (*cmd == 'H')
+		output_now = OUT_HDMI;
+	else if (*cmd == 'j')
+		output_now = output = OUT_JACK;
+	else if (*cmd == 'J')
+		output_now = OUT_JACK;
+	else
+		output_now = output;
+	return outputs[output_now];
 }
 
 /* Write number in decimal format to file descriptor, printf() is BLOATED!!! */

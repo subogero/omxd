@@ -2,8 +2,7 @@ omxd daemon to maintain a playlist and play it via omxplayer
 ============================================================
 
 The omxd daemon plays your playlist even if you've disconnected from your
-Raspberry Pi, to allow the easy implementation of various media centre
-applications.
+Raspberry Pi, to allow the easy implementation of various media centre apps.
 Typically, start omxd from the /etc/rc.local stript at boot time.
 
 COMMANDS
@@ -13,20 +12,23 @@ please write one command at a time into it, for example:
 
 echo A /home/foo/bar.mp3 > /var/run/omxctl
 
-Playlist commands mimic vi. Files shall be absolute paths or URLs
-playable by omxplayer.
+Playlist commands: Files shall be absolute paths or URLs playable by omxplayer.
 
 i file	insert to playlist before current item
-I file	interrupt playlist, play file, then continue playlist
+I file	interrupt playlist, play file on default output, then continue playlist
+H file	interrupt playlist, play file on HDMI, then continue playlist
+J file	interrupt playlist, play file on Jack, then continue playlist
 a file	add to playlist after current item
 A file	append to end of playlist
 .	replay current item
+h	change default output to HDMI
+j	change default output to Jack
 n	next
 N	previous
 x	delete current item from playlist, play next
 X	delete entire playlist
 
-Others commands are mostly the same as the omxplayer interactive hotkeys.
+Others commands control the running omxplayer instance.
 
 f	forward 30s
 r	rewind  30s

@@ -3,7 +3,7 @@
 #define LINE_MAX (LINE_LENGTH - 1)
 
 #define OMX_CMDS "frFRpkoms-+"
-#define LIST_CMDS "iIaA.nNxXdD"
+#define LIST_CMDS "iIHJaA.hjnNxXdD"
 
 /* From omxd.c */
 extern int logfd; /* logfile descriptor */

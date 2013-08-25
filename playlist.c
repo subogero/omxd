@@ -25,16 +25,16 @@ char *playlist(char *cmd, char *file)
 	/* Special cases when there is nothing to do */
 	if (cmd == NULL || strchr(LIST_CMDS, *cmd) == NULL)
 		return NULL;
-	if (*cmd == 'I')
+	if (strchr("IHJ", *cmd) != NULL)
 		return file;
-	if (*cmd == '.')
+	if (strchr(".hj", *cmd) != NULL)
 		return file_playing;
 	if (*cmd == 'X') {
 		unlink("omxplay");
 		size = 0;
 		i_list = 0;
 		*file_playing = 0;
-		return file_playing;
+		return NULL;
 	}
 	if (size == 0 && *cmd == 'i')
 		*cmd = 'a';
