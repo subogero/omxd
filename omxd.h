@@ -13,3 +13,6 @@ int printfd(int fd, char *fmt, ...);
 
 /* From playlist.c */
 char *playlist(char *cmd, char *file);
+
+/* From client.c */
+int client(int argc, char *argv[]);

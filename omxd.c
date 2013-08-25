@@ -13,7 +13,6 @@ int logfd;
 static int ctrlpipe[2];
 static pid_t player_pid = 0;
 
-static int client(int argc, char *argv[]);
 static int daemonize(void);
 static int parse(char *line);
 static int player(char *cmd, char *file);
@@ -59,21 +58,6 @@ int main(int argc, char *argv[])
 			*lf = 0;
 		}
 		parse(line);
-	}
-	return 0;
-}
-
-/* Simple client */
-static int client(int argc, char *argv[])
-{
-	int cmdfd = open("/var/run/omxctl", O_WRONLY|O_NONBLOCK);
-	if (cmdfd < 0) {
-		writestr(2, "Can't open /var/run/omxctl\n");
-		return 10;
-	}
-	if (writestr(cmdfd, argv[1]) == 0) {
-		writestr(2, "Can't write /var/run/omxctl\n");
-		return 11;
 	}
 	return 0;
 }
