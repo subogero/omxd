@@ -79,13 +79,14 @@ static int daemonize(void)
 	if (sid < 0)
 		return 2;
 	/* Run in /var/run if invoked as root, or allow testing in CWD */
-	if (getuid() == 0 && chdir("/var/run/") < 0)
+	int I_root = geteuid() == 0;
+	if (I_root && chdir("/var/run/") < 0)
 		return 3;
 	/* Create log file as stdout and stderr */
 	close(0);
 	close(1);
 	close(2);
-	logfd = creat("omxlog", 0644);
+	logfd = creat(I_root ? "/var/log/omxlog" : "omxlog", 0644);
 	if (logfd < 0)
 		return 4;
 	if (printfd(logfd, "daemonize: omxd started, SID %d\n", sid) == 0)

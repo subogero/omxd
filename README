@@ -50,4 +50,4 @@ in the current directory to allow easier testing.
 
 /var/run/omxctl 	FIFO to write commands into
 /var/run/omxplay	playlist file, actual item indicated by >
-/var/run/omxlog		log file
+/var/log/omxlog		log file
