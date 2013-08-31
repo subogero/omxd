@@ -122,7 +122,7 @@ static int writecmd(char *cmd)
 {
 	strcat(cmd, "\n");
 	const char *const filters[] = {
-		"jpg\n", "JPG\n", "m3u\n", "txt\n", "nfo\n", "sfv\n", NULL
+		"jpg\n","JPG\n","m3u\n","txt\n","nfo\n","sfv\n","log\n",NULL
 	};
 	int i;
 	for (i = 0; filters[i] != NULL; ++i) {
