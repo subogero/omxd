@@ -6,17 +6,22 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <stdlib.h>
+#include <signal.h>
 #include "omxd.h"
 
 static char *is_url(char *file);
 static mode_t get_ftype(char *file);
 static int cmd_foreach_in(char *cmd);
 static int writecmd(char *cmd);
+char file_opening[32];
+static int open_tout(char *file);
+static void open_tout_handler(int signal);
 
 int client(int argc, char *argv[])
 {
 	char *cmd = argv[1];
 	char *file = argc >= 3 ? argv[2] : NULL;
+	signal(SIGALRM, open_tout_handler);
 	/* Check command */
 	if (strchr(OMX_CMDS LIST_CMDS, *cmd) == NULL)
 		return 11;
@@ -124,9 +129,9 @@ static int writecmd(char *cmd)
 		if (strstr(cmd, filters[i]) != NULL)
 			return 0;
 	}
-	int cmdfd = open("omxctl", O_WRONLY|O_NONBLOCK);
+	int cmdfd = open_tout("omxctl");
 	if (cmdfd < 0) {
-		cmdfd = open("/var/run/omxctl", O_WRONLY|O_NONBLOCK);
+		cmdfd = open_tout("/var/run/omxctl");
 		if (cmdfd < 0) {
 			writestr(2, "Can't open omxctl or /var/run/omxctl\n");
 			return 10;
@@ -142,4 +147,25 @@ static int writecmd(char *cmd)
 	 */
 	usleep(10000);
 	return 0;
+}
+
+static int open_tout(char *file)
+{
+	strcpy(file_opening, file);
+	alarm(1);
+	int fd = open(file, O_WRONLY);
+	alarm(0);
+	file_opening[0] = 0;
+	return fd;
+}
+
+static void open_tout_handler(int signal)
+{
+	printfd(2,
+		"Opening FIFO '%s' timed out.\n"
+		"The omxd daemon is dead or listening on another one.\n"
+		"An unprivileged omxd listens on omxctl in its current dir.\n"
+		"One started as root listens on '/var/run/omxctl'.\n",
+		file_opening);
+	_exit(10);
 }
