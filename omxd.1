@@ -1,43 +1,50 @@
-omxd(1) --  daemon to maintain a playlist and play it via omxplayer
-===================================================================
-
-## SYNOPSIS
-
+.\" Generated with Ronnjs 0.3.8
+.\" http://github.com/kapouer/ronnjs/
+.
+.TH "OMXD" "1" "August 2013" "" ""
+.
+.SH "NAME"
+\fBomxd\fR \-\- daemon to maintain a playlist and play it via omxplayer
+.
+.SH "SYNOPSIS"
  omxd
- echo <command> [abs-path] > /var/run/omxctl
- omxd <command> [rel-path]
-
-## DESCRIPTION
-
-The omxd daemon plays your playlist even if you've disconnected from your
-Raspberry Pi, to allow the easy implementation of various media centre apps.
-Typically, start omxd from the /etc/rc.local stript at boot time.
-
-## COMMANDS
-
+ echo <command> [abs\-path] > /var/run/omxctl
+ omxd <command> [rel\-path]
+.
+.SH "DESCRIPTION"
+The omxd daemon plays your playlist even if you\'ve disconnected from your
+Raspberry Pi, to allow the easy implementation of various media centre apps\.
+Typically, start omxd from the /etc/rc\.local stript at boot time\.
+.
+.SH "COMMANDS"
 omxd listens for commands through the /var/run/omxctl FIFO,
 please write one command at a time into it, for example:
-
-echo A /home/foo/bar.mp3 > /var/run/omxctl
-
-Playlist commands: Files shall be absolute paths or URLs playable by omxplayer.
-
+.
+.P
+echo A /home/foo/bar\.mp3 > /var/run/omxctl
+.
+.P
+Playlist commands: Files shall be absolute paths or URLs playable by omxplayer\.
+.
+.P
  i file	insert to playlist before current item
  I file	interrupt playlist, play file on default output, then continue playlist
  H file	interrupt playlist, play file on HDMI, then continue playlist
  J file	interrupt playlist, play file on Jack, then continue playlist
  a file	add to playlist after current item
  A file	append to end of playlist
- .	replay current item
+ \.	replay current item
  h	change default output to HDMI
  j	change default output to Jack
  n	next
  N	previous
  x	delete current item from playlist, play next
  X	delete entire playlist
-
-Others commands control the running omxplayer instance.
-
+.
+.P
+Others commands control the running omxplayer instance\.
+.
+.P
  f	forward 30s
  r	rewind  30s
  F	forward 600s
@@ -47,21 +54,20 @@ Others commands control the running omxplayer instance.
  o	next chapter
  m	next subtitle stream
  s	toggle subtitles
- -	volume down
+ \-	volume down
  +	volume up
-
-## CLIENT MODE
-
+.
+.SH "CLIENT MODE"
 You can call omxd with the above commands as arguments, it writes them
 into /var/run/omxctl, but translates relative paths into absolute ones
-and performs commands recursively if you specify a directory as the file.
-
-## FILES
-
+and performs commands recursively if you specify a directory as the file\.
+.
+.SH "FILES"
 When you start the omxd daemon as an unprivileged user the files below
 will be created in the current directory instead of the locations below,
-to allow easier testing.
-
+to allow easier testing\.
+.
+.P
  /var/run/omxctl 	FIFO to write commands into
  /var/run/omxplay	playlist file, actual item indicated by >
  /var/log/omxlog	log file
