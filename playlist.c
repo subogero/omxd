@@ -1,4 +1,4 @@
-/* (c) SZABO Gergely <szg@subogero.com>, license GPLv3 */
+/* (c) SZABO Gergely <szg@subogero.com>, license GNU GPL v2 */
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdio.h>

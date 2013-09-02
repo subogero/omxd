@@ -1,4 +1,4 @@
-/* (c) SZABO Gergely <szg@subogero.com>, license GPLv3 */
+/* (c) SZABO Gergely <szg@subogero.com>, license GNU GPL v2 */
 #define LINE_LENGTH 256
 #define LINE_MAX (LINE_LENGTH - 1)
 
