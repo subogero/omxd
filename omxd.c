@@ -57,6 +57,7 @@ int main(int argc, char *argv[])
 		if (lf != NULL) {
 			*lf = 0;
 		}
+		printfd(logfd, "main: %s\n", line);
 		parse(line);
 	}
 	return 0;
@@ -145,6 +146,7 @@ static int player(char *cmd, char *file)
 		} else if (player_pid > 0) { /* Parent: set SIGCHLD handler */
 			close(ctrlpipe[0]);
 			signal(SIGCHLD, player_quit);
+			printfd(logfd, "player: PID=%d %s\n", player_pid, file);
 		} else { /* Child: exec omxplayer */
 			close(ctrlpipe[1]);
 			/* Redirect read end of control pipe to 0 stdin */
@@ -158,13 +160,12 @@ static int player(char *cmd, char *file)
 			argv[1] = get_output(cmd);
 			argv[2] = file;
 			argv[3] = NULL;
-			printfd(logfd, "player child: %s\n", file);
 			execve(argv[0], argv, NULL);
 			writestr(logfd, "player child: Can't exec omxplayer\n");
 			_exit(20);
 		}
 	} else if (strchr(OMX_CMDS, *cmd) != NULL && player_pid != 0) {
-		printfd(logfd, "player parent: Send %s to omxplayer\n", cmd);
+		printfd(logfd, "player: Send %s to omxplayer\n", cmd);
 		cmd[1] = 0; /* Just one character normally */
 		/* Replace FRfr with arrow-key escape sequences */
 		if      (*cmd == 'F')
@@ -188,16 +189,14 @@ static void player_quit(int signum)
 	close(ctrlpipe[1]);
 	printfd(logfd, "player_quit: PID=%d (%d) with %d\n", pid, player_pid, status);
 	player_pid = 0;
-	if (signum == SIGCHLD) {
+	if (signum == SIGCHLD)
 		player("n", playlist("n", NULL));
-		writestr(logfd, "player_quit: Next file started\n");
-	}
 }
 
 /* Return omxplayer argument to set output interface (Jack/HDMI) */
 static char *get_output(char *cmd)
 {
-	enum e_outputs                 { OUT_JACK,  OUT_HDMI };
+	enum e_outputs           { OUT_JACK,  OUT_HDMI };
 	static char *outputs[] = { "-olocal", "-ohdmi" };
 	static enum e_outputs output = OUT_JACK;
 	enum e_outputs output_now;

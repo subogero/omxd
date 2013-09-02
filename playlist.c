@@ -52,9 +52,9 @@ char *playlist(char *cmd, char *file)
 		act = 1;
 	else if (act < 1)
 		act = size;
-	printfd(logfd, "playlist: add=%d del=%d act=%d\n", add, del, act);
 	rewrite_list(add, del, act, file, orig_size);
-	printfd(logfd, "playlist: %d/%d %s\n", i_list, size, file_playing);
+	printfd(logfd, "playlist: add=%d del=%d act=%d %d/%d %s\n",
+		add, del, act, i_list, size, file_playing);
 	return size == 1          ? file_playing
 	     : strchr("aA", *cmd) ? NULL
 	     :                      file_playing;
