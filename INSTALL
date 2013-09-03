@@ -1,0 +1,18 @@
+INSTALLATION
+============
+
+## INSTALL
+
+The below installation procedure will install and start the daemon,
+make it auto-start at reboot, install its manual page and set up
+logrotate for its logfile /var/log/omxlog.
+You need the 'git', 'gcc' and 'make' packages to perform the installation.
+
+ git clone https://github.com/subogero/omxd.git
+ cd omxd
+ make
+ sudo make install
+
+## UNINSTALL
+
+sudo make uninstall
