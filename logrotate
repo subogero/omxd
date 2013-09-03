@@ -1,0 +1,6 @@
+/var/log/omxlog {
+    missingok
+    weekly
+    copytruncate
+    rotate 1
+}
