@@ -50,6 +50,10 @@ Others commands control the running omxplayer instance.
  -	volume down
  +	volume up
 
+Client commands:
+
+ S	show what's playing now
+
 ## CLIENT MODE
 
 You can call omxd with the above commands as arguments, it writes them

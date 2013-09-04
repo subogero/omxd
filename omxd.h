@@ -4,6 +4,7 @@
 
 #define OMX_CMDS "frFRpkoms-+"
 #define LIST_CMDS "iIHJaA.hjnNxXdD"
+#define CLIENT_CMDS "S"
 
 /* From omxd.c */
 extern int logfd; /* logfile descriptor */

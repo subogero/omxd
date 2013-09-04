@@ -7,8 +7,10 @@
 #include <dirent.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <stdio.h>
 #include "omxd.h"
 
+static int client_cmd(char *cmd);
 static char *is_url(char *file);
 static mode_t get_ftype(char *file);
 static int cmd_foreach_in(char *cmd);
@@ -23,6 +25,8 @@ int client(int argc, char *argv[])
 	char *file = argc >= 3 ? argv[2] : NULL;
 	signal(SIGALRM, open_tout_handler);
 	/* Check command */
+	if (strchr(CLIENT_CMDS, *cmd) != NULL)
+		return client_cmd(cmd);
 	if (strchr(OMX_CMDS LIST_CMDS, *cmd) == NULL)
 		return 11;
 	if (file == NULL)
@@ -53,6 +57,32 @@ int client(int argc, char *argv[])
 		printfd(2, "Wrong file type %d: %s\n", type, line + 2);
 		return 12;
 	}
+}
+
+static int client_cmd(char *cmd)
+{
+	if (*cmd != 'S')
+		return 15;
+	FILE *logfile = fopen("/var/log/omxlog", "r");
+	if (logfile == NULL)
+		return 15;
+	char line[LINE_LENGTH];
+	char playing[LINE_LENGTH];
+	*playing = 0;
+	int paused = 0;
+	while (fgets(line, LINE_LENGTH, logfile)) {
+		if (strstr(line, "player: PID=") == line) {
+			strtok(line, " ");
+			strtok(NULL, " ");
+			strcpy(playing, strtok(NULL, "\n"));
+			paused = 0;
+		}
+		if (strstr(line, "player: Send p ") == line)
+			paused = !paused;
+	}
+	char *st = *playing == 0 ? "Stopped" : paused ? "Paused" : "Playing";
+	printfd(1, "%s %s\n", st, playing);
+	return 0;
 }
 
 static char *is_url(char *file)
