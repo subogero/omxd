@@ -6,7 +6,7 @@ install:
 	-killall omxd
 	cp omxd /usr/bin
 	omxd
-	perl -pe '$$o=1 if /omxd/; print "omxd\n" if !$$o && /exit 0/' -i /etc/rc.local
+	perl -pe '$$o=1 if /omxd/; print "omxd\n" if !$$o && /^exit 0/' -i /etc/rc.local
 	cp logrotate /etc/logrotate.d/omxd
 	cp omxd.1 /usr/share/man/man1/
 uninstall:
