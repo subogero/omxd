@@ -123,11 +123,11 @@ static int cmd_foreach_in(char *cmd)
 	}
 	int i;
 	for (i = 0; i < n; ++i) {
-		if (i < 2)
+		char *entry = entries[i]->d_name;
+		if (*entry == '.')
 			goto free_entry;
 		char line[LINE_LENGTH];
 		strcpy(line, cmd);
-		char *entry = entries[i]->d_name;
 		strcat(line, entry);
 		switch (get_ftype(line + 2)) {
 		case S_IFDIR:
