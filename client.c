@@ -79,6 +79,8 @@ static int client_cmd(char *cmd)
 		}
 		if (strstr(line, "player: Send p ") == line)
 			paused = !paused;
+		if (strstr(line, "player_quit:") == line)
+			*playing = 0;
 	}
 	char *st = *playing == 0 ? "Stopped" : paused ? "Paused" : "Playing";
 	printfd(1, "%s %s\n", st, playing);
