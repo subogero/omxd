@@ -3,4 +3,5 @@
     weekly
     copytruncate
     rotate 1
+    nocompress
 }

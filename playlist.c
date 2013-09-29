@@ -53,7 +53,7 @@ char *playlist(char *cmd, char *file)
 	else if (act < 1)
 		act = size;
 	rewrite_list(add, del, act, file, orig_size);
-	printfd(logfd, "playlist: add=%d del=%d act=%d %d/%d %s\n",
+	LOG(0, "playlist: add=%d del=%d act=%d %d/%d %s\n",
 		add, del, act, i_list, size, file_playing);
 	return size == 1          ? file_playing
 	     : strchr("aA", *cmd) ? NULL
@@ -88,7 +88,7 @@ static void rewrite_list(int add, int del, int act, char *file, int orig_size)
 	if (play == NULL) {
 		if (bak != NULL)
 			fclose(bak);
-		writestr(logfd, "playlist: could not open omxplay\n");
+		LOG(0, "playlist: could not open omxplay\n");
 		return;
 	}
 	int i = 1;
@@ -107,7 +107,7 @@ static void rewrite_list(int add, int del, int act, char *file, int orig_size)
 				if (add == size)
 					add++;
 				size++;
-				writestr(logfd, "playlist: external grow\n");
+				LOG(0, "playlist: external grow\n");
 			}
 		} else if (orig_size != old_size) {
 			size += old_size - orig_size;
@@ -116,7 +116,7 @@ static void rewrite_list(int add, int del, int act, char *file, int orig_size)
 				add = size;
 			if (i_list > size)
 				i_list = size;
-			writestr(logfd, "playlist: external shrink\n");
+			LOG(0, "playlist: external shrink\n");
 		}
 		/* Add or delete a line */
 		if (i == add) {

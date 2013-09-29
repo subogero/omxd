@@ -36,17 +36,17 @@ int main(int argc, char *argv[])
 		if (cmdfd < 0) {
 			cmdfd = open("omxctl", O_RDONLY);
 			if (cmdfd < 0) {
-				writestr(logfd, "main: Can't open omxctl\n");
+				LOG(0, "main: Can't open omxctl\n");
 				return 7;
 			} else {
-				writestr(logfd, "main: Client opened omxctl\n");
+				LOG(0, "main: Client opened omxctl\n");
 				continue;
 			}
 		}
 		char line[LINE_LENGTH];
 		int len = read(cmdfd, line, LINE_MAX);
 		if (len == 0) {
-			writestr(logfd, "main: Client closed omxctl\n");
+			LOG(0, "main: Client closed omxctl\n");
 			close(cmdfd);
 			cmdfd = -1;
 			continue;
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 		if (lf != NULL) {
 			*lf = 0;
 		}
-		printfd(logfd, "main: %s\n", line);
+		LOG(0, "main: %s\n", line);
 		parse(line);
 	}
 	return 0;
@@ -94,10 +94,10 @@ static int daemonize(void)
 		return 5;
 	/* Create and open FIFO for command input as stdin */
 	unlink("omxctl");
-	writestr(logfd, "daemonize: Deleted original omxctl FIFO\n");
+	LOG(0, "daemonize: Deleted original omxctl FIFO\n");
 	if (mknod("omxctl", S_IFIFO | 0622, 0) < 0)
 		return 6;
-	writestr(logfd, "daemonize: Created new omxctl FIFO\n");
+	LOG(0, "daemonize: Created new omxctl FIFO\n");
 	return 0;
 }
 
@@ -146,7 +146,7 @@ static int player(char *cmd, char *file)
 		} else if (player_pid > 0) { /* Parent: set SIGCHLD handler */
 			close(ctrlpipe[0]);
 			signal(SIGCHLD, player_quit);
-			printfd(logfd, "player: PID=%d %s\n", player_pid, file);
+			LOG(0, "player: PID=%d %s\n", player_pid, file);
 		} else { /* Child: exec omxplayer */
 			close(ctrlpipe[1]);
 			/* Redirect read end of control pipe to 0 stdin */
@@ -161,11 +161,11 @@ static int player(char *cmd, char *file)
 			argv[2] = file;
 			argv[3] = NULL;
 			execve(argv[0], argv, NULL);
-			writestr(logfd, "player child: Can't exec omxplayer\n");
+			LOG(0, "player child: Can't exec omxplayer\n");
 			_exit(20);
 		}
 	} else if (strchr(OMX_CMDS, *cmd) != NULL && player_pid != 0) {
-		printfd(logfd, "player: Send %s to omxplayer\n", cmd);
+		LOG(0, "player: Send %s to omxplayer\n", cmd);
 		cmd[1] = 0; /* Just one character normally */
 		/* Replace FRfr with arrow-key escape sequences */
 		if      (*cmd == 'F')
@@ -187,7 +187,7 @@ static void player_quit(int signum)
 	pid_t pid = wait(&status);
 	status = WEXITSTATUS(status);
 	close(ctrlpipe[1]);
-	printfd(logfd, "player_quit: PID=%d (%d) with %d\n", pid, player_pid, status);
+	LOG(0, "player_quit: PID=%d (%d) with %d\n", pid, player_pid, status);
 	player_pid = 0;
 	if (signum == SIGCHLD)
 		player("n", playlist("n", NULL));
