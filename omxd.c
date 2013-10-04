@@ -7,6 +7,8 @@
 #include <signal.h>
 #include <string.h>
 #include <stdarg.h>
+#include <pwd.h>
+#include <grp.h>
 #include "omxd.h"
 
 int logfd;
@@ -17,6 +19,7 @@ static int daemonize(void);
 static int parse(char *line);
 static int player(char *cmd, char *file);
 static void player_quit(int signum); /* SIGCHLD signal handler */
+static void drop_priv(void);
 static char *get_output(char *cmd);
 
 int main(int argc, char *argv[])
@@ -148,20 +151,20 @@ static int player(char *cmd, char *file)
 			signal(SIGCHLD, player_quit);
 			LOG(0, "player: PID=%d %s\n", player_pid, file);
 		} else { /* Child: exec omxplayer */
+			drop_priv();
 			close(ctrlpipe[1]);
 			/* Redirect read end of control pipe to 0 stdin */
-			if (logfd == 0)
-				logfd = dup(logfd);
+			close(logfd);
 			close(0);
 			dup(ctrlpipe[0]);
 			close(ctrlpipe[0]);
+
 			char *argv[4];
 			argv[0] = "/usr/bin/omxplayer";
 			argv[1] = get_output(cmd);
 			argv[2] = file;
 			argv[3] = NULL;
 			execve(argv[0], argv, NULL);
-			LOG(0, "player child: Can't exec omxplayer\n");
 			_exit(20);
 		}
 	} else if (strchr(OMX_CMDS, *cmd) != NULL && player_pid != 0) {
@@ -191,6 +194,29 @@ static void player_quit(int signum)
 	player_pid = 0;
 	if (signum == SIGCHLD)
 		player("n", playlist("n", NULL));
+}
+
+/* Drop root privileges before execing omxplayer */
+static void drop_priv(void)
+{
+	int cfg = open("/etc/omxd", O_RDONLY);
+	if (cfg < 0)
+		return;
+	char buffer[4096];
+	if (read(cfg, buffer, 4096) == 0)
+		return;
+	char *line = strstr(buffer, "user=");
+	if (line == NULL)
+		return;
+	strtok(line, "=");
+	char *user = strtok(NULL, "\n");
+	struct passwd *pwd = getpwnam(user);
+	if (pwd == NULL)
+		return;
+	chdir(pwd->pw_dir);
+	initgroups(pwd->pw_name, pwd->pw_gid);
+	setgid(pwd->pw_gid);
+	setuid(pwd->pw_uid);
 }
 
 /* Return omxplayer argument to set output interface (Jack/HDMI) */
