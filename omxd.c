@@ -141,6 +141,11 @@ static int player(char *cmd, char *file)
 			player_quit(0);
 		}
 		pipe(ctrlpipe);
+		char *argv[4];
+		argv[0] = "/usr/bin/omxplayer";
+		argv[1] = get_output(cmd);
+		argv[2] = file;
+		argv[3] = NULL;
 		player_pid = fork();
 		if (player_pid < 0) { /* Fork error */
 			player_pid = 0;
@@ -158,12 +163,6 @@ static int player(char *cmd, char *file)
 			close(0);
 			dup(ctrlpipe[0]);
 			close(ctrlpipe[0]);
-
-			char *argv[4];
-			argv[0] = "/usr/bin/omxplayer";
-			argv[1] = get_output(cmd);
-			argv[2] = file;
-			argv[3] = NULL;
 			execve(argv[0], argv, NULL);
 			_exit(20);
 		}
