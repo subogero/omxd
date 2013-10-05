@@ -9,6 +9,8 @@
 static int i_list = -1;
 static int size = 0;
 static char file_playing[LINE_LENGTH] = { 0, };
+static char next_file[LINE_LENGTH] = { 0, };
+static char inserted_next_file = 0;
 
 static void init_list(void);
 static void rewrite_list(int add, int del, int act, char *file, int orig_size);
@@ -27,6 +29,15 @@ char *playlist(char *cmd, char *file)
 		return NULL;
 	if (strchr("IHJ", *cmd) != NULL)
 		return file;
+	if (*cmd == 'L') {
+		strncpy(next_file, file, LINE_LENGTH);
+		inserted_next_file = 1;
+		return NULL;
+	}
+	if (inserted_next_file && *cmd == 'n') {
+		inserted_next_file = 0;
+		return next_file;
+	}
 	if (strchr(".hj", *cmd) != NULL)
 		return file_playing;
 	if (*cmd == 'X') {

@@ -1,7 +1,7 @@
 .\" Generated with Ronnjs 0.3.8
 .\" http://github.com/kapouer/ronnjs/
 .
-.TH "OMXD" "1" "September 2013" "" ""
+.TH "OMXD" "1" "October 2013" "" ""
 .
 .SH "NAME"
 \fBomxd\fR \-\- daemon to maintain a playlist and play it via omxplayer
@@ -28,11 +28,12 @@ Playlist commands: Files shall be absolute paths or URLs playable by omxplayer\.
 .
 .P
  i file	insert to playlist before current item
+ a file	add to playlist after current item
+ A file	append to end of playlist
  I file	interrupt playlist, play file on default output, then continue playlist
  H file	interrupt playlist, play file on HDMI, then continue playlist
  J file	interrupt playlist, play file on Jack, then continue playlist
- a file	add to playlist after current item
- A file	append to end of playlist
+ L file	pLay file on default after current item, then continue playlist
  \.	replay current item
  h	change default output to HDMI
  j	change default output to Jack
@@ -77,3 +78,4 @@ to allow easier testing\.
  /var/run/omxctl 	FIFO to write commands into
  /var/run/omxplay	playlist file, actual item indicated by >
  /var/log/omxlog	log file
+ /etc/omxd		defines user to run omxplayer: user=foo

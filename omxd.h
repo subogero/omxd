@@ -3,7 +3,7 @@
 #define LINE_MAX (LINE_LENGTH - 1)
 
 #define OMX_CMDS "frFRpkoms-+"
-#define LIST_CMDS "iIHJaA.hjnNxXdD"
+#define LIST_CMDS "iaAIHJL.hjnNxXdD"
 #define CLIENT_CMDS "S"
 
 /* From omxd.c */
