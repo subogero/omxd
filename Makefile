@@ -4,6 +4,7 @@ omxd.1: README
 	curl -F page=@README http://mantastic.herokuapp.com > omxd.1
 install:
 	-killall omxd
+	-killall omxplayer.bin
 	cp omxd /usr/bin
 	omxd
 	perl -pe '$$o=1 if /omxd/; print "omxd\n" if !$$o && /^exit 0/' -i /etc/rc.local
