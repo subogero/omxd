@@ -198,7 +198,7 @@ static void player_quit(int signum)
 /* Drop root privileges before execing omxplayer */
 static void drop_priv(void)
 {
-	int cfg = open("/etc/omxd", O_RDONLY);
+	int cfg = open("/etc/omxd.conf", O_RDONLY);
 	if (cfg < 0)
 		return;
 	char buffer[4096];

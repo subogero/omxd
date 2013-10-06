@@ -67,7 +67,7 @@ When you start the omxd daemon as an unprivileged user the files below
 will be created in the current directory instead of the locations below,
 to allow easier testing.
 
- /var/run/omxctl 	FIFO to write commands into
- /var/run/omxplay	playlist file, actual item indicated by >
- /var/log/omxlog	log file
- /etc/omxd		defines user to run omxplayer: user=foo
+  /var/run/omxctl	FIFO to write commands into
+  /var/run/omxplay	playlist file, actual item indicated by >
+  /var/log/omxlog	log file
+  /etc/omxd.conf	defines user to run omxplayer: user=foo

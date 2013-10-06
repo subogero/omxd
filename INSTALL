@@ -13,9 +13,9 @@ You need the 'git', 'gcc' and 'make' packages to perform the installation.
  make
  sudo make install
 
-If you want to run omxplayer as an unprivileged user, create /etc/omxd
+If you want to run omxplayer as an unprivileged user, create /etc/omxd.conf
 
- sudo echo 'user=foo' > /etc/omxd
+ sudo echo 'user=foo' > /etc/omxd.conf
 
 Make sure the user is part of the audio and video groups.
 
