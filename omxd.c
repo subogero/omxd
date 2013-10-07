@@ -16,6 +16,7 @@ static int ctrlpipe[2];
 static pid_t player_pid = 0;
 
 static int daemonize(void);
+static int read_fifo(char *line);
 static int parse(char *line);
 static int player(char *cmd, char *file);
 static void player_quit(int signum); /* SIGCHLD signal handler */
@@ -34,32 +35,9 @@ int main(int argc, char *argv[])
 	else if (daemon_error < 0)
 		return 0;
 	/* Main loop */
-	int cmdfd = -1;
 	while (1) {
-		if (cmdfd < 0) {
-			cmdfd = open("omxctl", O_RDONLY);
-			if (cmdfd < 0) {
-				LOG(0, "main: Can't open omxctl\n");
-				return 7;
-			} else {
-				LOG(0, "main: Client opened omxctl\n");
-				continue;
-			}
-		}
 		char line[LINE_LENGTH];
-		int len = read(cmdfd, line, LINE_MAX);
-		if (len == 0) {
-			LOG(0, "main: Client closed omxctl\n");
-			close(cmdfd);
-			cmdfd = -1;
-			continue;
-		}
-		/* Make C-string from one input line, discard LF and rest*/
-		line[LINE_MAX] = 0;
-		char *lf = strchr(line, '\n');
-		if (lf != NULL) {
-			*lf = 0;
-		}
+		read_fifo(line);
 		LOG(0, "main: %s\n", line);
 		parse(line);
 	}
@@ -104,6 +82,41 @@ static int daemonize(void)
 	return 0;
 }
 
+/* Read a line from FIFO /var/run/omxctl */
+static int read_fifo(char *line)
+{
+	static int cmdfd = -1;
+	if (cmdfd < 0) {
+		cmdfd = open("omxctl", O_RDONLY);
+		if (cmdfd < 0) {
+			LOG(0, "read_fifo: Can't open omxctl\n");
+			return -1;
+		} else {
+			LOG(0, "read_fifo: Client opened omxctl\n");
+		}
+	}
+	int i = 0;
+	while (1) {
+		if (!read(cmdfd, line + i, 1)) {
+			LOG(0, "read_fifo: Client closed omxctl\n");
+			close(cmdfd);
+			cmdfd = -1;
+			line[i] = 0;
+			return i;
+		} else if (line[i] == '\n') {
+			LOG(0, "read_fifo: omxctl end of line\n");
+			line[i] = 0;
+			return i;
+		} else if (i == LINE_LENGTH - 2) {
+			LOG(0, "read_fifo: omxctl too long line\n");
+			i++;
+			line[i] = 0;
+			return i;
+		}
+		i++;
+	}
+}
+
 /* Get command char and file/URL name from a command line */
 static int parse(char *line)
 {
@@ -125,7 +138,7 @@ static int parse(char *line)
 		}
 		file++;
 	}
-	if (cmd != NULL) {
+	if (cmd != NULL && *cmd != 0) {
 		player(cmd, playlist(cmd, file));
 	}
 	return cmd != NULL ? *cmd : 0;

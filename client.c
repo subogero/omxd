@@ -172,12 +172,6 @@ static int writecmd(char *cmd)
 	writestr(2, cmd);
 	writestr(cmdfd, cmd);
 	close(cmdfd);
-	/*
-	 * Give up the CPU to the omxd daemon to read the above line from FIFO.
-	 * The clean solution to this race condition would be to teach the
-	 * daemon to read multiple lines from the FIFO after a single open().
-	 */
-	usleep(10000);
 	return 0;
 }
 
