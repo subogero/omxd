@@ -34,6 +34,8 @@ Playlist commands: Files shall be absolute paths or URLs playable by omxplayer.
  j	change default output to Jack
  n	next
  N	previous
+ d	next directory
+ D	previous directory
  x	delete current item from playlist, play next
  X	delete entire playlist
 

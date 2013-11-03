@@ -11,10 +11,13 @@ static int size = 0;
 static char file_playing[LINE_LENGTH] = { 0, };
 static char next_file[LINE_LENGTH] = { 0, };
 static char inserted_next_file = 0;
+enum e_dirs { D_1ST, D_PREV, D_ACT, D_NEXT, D_LAST, D_NUMOF };
+static int dirs[D_NUMOF] = { 0, };
 
 static void init_list(void);
 static void rewrite_list(int add, int del, int act, char *file, int orig_size);
 static void insert_line(FILE *play, char *file, int activate, int *i);
+static void update_dirs(int i, char *line);
 /*
  * Manipulate the playlist, adding/removing files at various positions.
  * Return the filename to play now, or NULL if playback shall not be affected.
@@ -58,6 +61,8 @@ char *playlist(char *cmd, char *file)
 	case 'x': add = 0;        del = i_list; act = i_list;  size--; break;
 	case 'n': add = 0;        del = 0;      act = i_list+1;        break;
 	case 'N': add = 0;        del = 0;      act = i_list-1;        break;
+	case 'd': add = 0;        del = 0;      act = dirs[D_NEXT];    break;
+	case 'D': add = 0;        del = 0;      act = dirs[D_PREV];    break;
 	}
 	if (act > size)
 		act = 1;
@@ -160,9 +165,48 @@ static void insert_line(FILE *play, char *line, int activate, int *i)
 		i_list = *i;
 		fputs(">\t", play);
 	}
+	update_dirs(*i, line);
 	/* Add LF, print to file */
 	strcat(line, "\n");
 	fputs(line, play);
 	/* Increment line counter */
 	(*i)++;
+}
+
+/* Set dirs[] array: previous, actual, next directories */
+static void update_dirs(int i, char *line)
+{
+	static char next_found = 0;
+	static char last_dir[LINE_LENGTH] = { 0, };
+	char *last_slash = strrchr(line, '/');
+	if (last_slash == NULL)
+		goto update_dirs_wrap;
+	int dir_len = last_slash - line;
+	if (strncmp(last_dir, line, dir_len) == 0)
+		goto update_dirs_wrap;
+	/* From here we know the directory has changed since last */
+	memcpy(last_dir, line, dir_len);
+	last_dir[dir_len] = 0;
+	if (i == 1)
+		dirs[D_1ST] = i;
+	if (i <= i_list) {
+		dirs[D_PREV] = dirs[D_ACT];
+		dirs[D_ACT] = i;
+		next_found = 0;
+	} else {
+		if (!next_found) {
+			dirs[D_NEXT] = i;
+			next_found = 1;
+		}
+		dirs[D_LAST] = i;
+	}
+update_dirs_wrap:
+	if (i == size) {
+		if (!next_found)
+			dirs[D_LAST] = dirs[D_ACT];
+		if (dirs[D_PREV] == dirs[D_ACT])
+			dirs[D_PREV] = dirs[D_LAST];
+		if (dirs[D_NEXT] == dirs[D_ACT] || dirs[D_NEXT] == 0)
+			dirs[D_NEXT] = dirs[D_1ST];
+	}
 }
