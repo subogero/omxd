@@ -189,7 +189,7 @@ static int player(char *cmd, char *file)
 		else if (*cmd == 'r')
 			strcpy(cmd, "\033[D");
 		writestr(ctrlpipe[1], cmd);
-	} else if (*cmd == 'X' && player_pid != 0) {
+	} else if (strchr(STOP_CMDS, *cmd) != NULL && player_pid != 0) {
 		stop_playback();
 	}
 }

@@ -46,6 +46,7 @@ Others commands control the running omxplayer instance.
  F	forward 600s
  R	rewind  600s
  p	play/pause
+ P	pause playlist, stop omxplayer
  k	next audio stream
  o	next chapter
  m	next subtitle stream

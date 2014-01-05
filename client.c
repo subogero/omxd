@@ -27,7 +27,7 @@ int client(int argc, char *argv[])
 	/* Check command */
 	if (strchr(CLIENT_CMDS, *cmd) != NULL)
 		return client_cmd(cmd);
-	if (strchr(OMX_CMDS LIST_CMDS, *cmd) == NULL)
+	if (strchr(OMX_CMDS LIST_CMDS STOP_CMDS, *cmd) == NULL)
 		return 11;
 	if (file == NULL)
 		return writecmd(cmd);
