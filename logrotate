@@ -4,4 +4,7 @@
     copytruncate
     rotate 1
     nocompress
+    postrotate
+        bin/tail -n20 /var/log/omxlog.1 >> /var/log/omxlog
+    endscript
 }
