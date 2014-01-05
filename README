@@ -37,7 +37,7 @@ Playlist commands: Files shall be absolute paths or URLs playable by omxplayer.
  d	next directory
  D	previous directory
  x	delete current item from playlist, play next
- X	delete entire playlist
+ X	delete entire playlist, terminate playback
 
 Others commands control the running omxplayer instance.
 

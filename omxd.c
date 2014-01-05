@@ -19,6 +19,7 @@ static int daemonize(void);
 static int read_fifo(char *line);
 static int parse(char *line);
 static int player(char *cmd, char *file);
+static void stop_playback(void);
 static void player_quit(int signum); /* SIGCHLD signal handler */
 static void drop_priv(void);
 static char *get_output(char *cmd);
@@ -148,11 +149,7 @@ static int parse(char *line)
 static int player(char *cmd, char *file)
 {
 	if (file != NULL && *file != 0) {
-		if (player_pid != 0) {
-			signal(SIGCHLD, SIG_DFL);
-			write(ctrlpipe[1], "q", 1);
-			player_quit(0);
-		}
+		stop_playback();
 		pipe(ctrlpipe);
 		char *argv[4];
 		argv[0] = "/usr/bin/omxplayer";
@@ -192,6 +189,18 @@ static int player(char *cmd, char *file)
 		else if (*cmd == 'r')
 			strcpy(cmd, "\033[D");
 		writestr(ctrlpipe[1], cmd);
+	} else if (*cmd == 'X' && player_pid != 0) {
+		stop_playback();
+	}
+}
+
+/* Stop the playback immediately */
+static void stop_playback(void)
+{
+	if (player_pid != 0) {
+		signal(SIGCHLD, SIG_DFL);
+		write(ctrlpipe[1], "q", 1);
+		player_quit(0);
 	}
 }
 
