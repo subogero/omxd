@@ -72,8 +72,7 @@ static int daemonize(void)
 	logfd = creat(I_root ? "/var/log/omxlog" : "omxlog", 0644);
 	if (logfd < 0)
 		return 4;
-	if (printfd(logfd, "daemonize: omxd started, SID %d\n", sid) == 0)
-		return 5;
+	LOG(0, "daemonize: omxd started, SID %d\n", sid);
 	/* Create and open FIFO for command input as stdin */
 	unlink("omxctl");
 	LOG(0, "daemonize: Deleted original omxctl FIFO\n");

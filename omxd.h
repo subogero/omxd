@@ -11,8 +11,14 @@
 int writedec(int fd, int num);
 int writestr(int fd, char *str);
 int printfd(int fd, char *fmt, ...);
+
+#include <time.h>
 extern int logfd; /* logfile descriptor */
-#define LOG(level, ...) {lseek(logfd,0,SEEK_END);printfd(logfd,__VA_ARGS__);}
+#define LOG(level, ...) { \
+	lseek(logfd, 0, SEEK_END); \
+	printfd(logfd, "%d ", time(NULL)); \
+	printfd(logfd, __VA_ARGS__); \
+}
 
 /* From playlist.c */
 char *playlist(char *cmd, char *file);
