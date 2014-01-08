@@ -18,7 +18,7 @@ static pid_t player_pid = 0;
 static int daemonize(void);
 static int read_fifo(char *line);
 static int parse(char *line);
-static int player(char *cmd, char *file);
+static void player(char *cmd, char *file);
 static void stop_playback(void);
 static void player_quit(int signum); /* SIGCHLD signal handler */
 static void drop_priv(void);
@@ -146,7 +146,7 @@ static int parse(char *line)
 }
 
 /* Control the actual omxplayer */
-static int player(char *cmd, char *file)
+static void player(char *cmd, char *file)
 {
 	if (file != NULL && *file != 0) {
 		stop_playback();
@@ -165,6 +165,15 @@ static int player(char *cmd, char *file)
 			close(ctrlpipe[0]);
 			signal(SIGCHLD, player_quit);
 			LOG(0, "player: PID=%d %s\n", player_pid, file);
+			/* 2nd omxplayer for info, redirect stdout to logfile */
+			pid_t info_pid = fork();
+			if (info_pid != 0)
+				return;
+			argv[1] = "-i";
+			close(1);
+			int omx_stdout = dup(logfd);
+			execve(argv[0], argv, NULL);
+			_exit(20);
 		} else { /* Child: exec omxplayer */
 			drop_priv();
 			close(ctrlpipe[1]);
@@ -209,6 +218,8 @@ static void player_quit(int signum)
 {
 	int status;
 	pid_t pid = wait(&status);
+	if (pid != player_pid) /* Do nothing if info-omxplayer exited */
+		return;
 	status = WEXITSTATUS(status);
 	close(ctrlpipe[1]);
 	LOG(0, "player_quit: PID=%d (%d) with %d\n", pid, player_pid, status);
