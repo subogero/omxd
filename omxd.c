@@ -329,3 +329,29 @@ int printfd(int fd, char *fmt, ...)
 	va_end(va);
 	return bytes;
 }
+
+/* Read a decimal number from a string */
+int sscand(char *str, int *num)
+{
+	int digits = 0;
+	int number = 0;
+	int sign = 1;
+	if (*str == '-') {
+		str++;
+		sign = -1;
+		digits++;
+	}
+	while (*str) {
+		int digit = *str++;
+		if (digit < '0' || digit > '9')
+			break;
+		digits++;
+		digit -= '0';
+		number *= 10;
+		number += digit;
+	}
+	number *= sign;
+	*num = number;
+	return digits;
+}
+
