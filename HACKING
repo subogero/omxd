@@ -1,0 +1,56 @@
+CODING STYLE
+============
+
+Please use a variant of K&R, the Linux Coding Style:
+https://www.kernel.org/doc/Documentation/CodingStyle
+
+COMMITS
+=======
+
+The first line of commit messages shall summarize the change in 50 characters,
+include an issue id (like #19) at the end of line if relevant.
+Additional details, if any, should follow after a blank line.
+Use headlinese style: http://en.wikipedia.org/wiki/Headlinese
+Add the important stuff, leave out the fluff. Using words like "project",
+"omxd", "update" and "issue" is almost certainly wrong.
+
+Each commit should be about one single change. For a big change, use a feature
+branch and several small commits.
+
+TECHNICAL DETAILS
+=================
+
+The /var/run/omxctl FIFO and the protocol
+-----------------------------------------
+
+As opposed to a socket, you can simply echo a command into a FIFO file.
+And the protocol is dead simple: one-letter command plus optional filename.
+
+The trick with FIFOs:
+open() for read blocks until someone opens it for write.
+open() for write blocks until soemone opens it for read.
+
+writedec(), writestr(), printfd(), sscand(), WTF?
+-------------------------------------------------
+
+The similar C-library calls all come with unnecessary complication and, worse,
+user-space buffering. And it was fun to write these, just using bare syscalls.
+
+Why not store the playlist in memory?
+-------------------------------------
+
+Because that needs a lot of dynamic memory allocation. Which might lead to
+memory leaks. Memory leaks in a daemon are bad.
+The stupid man's way to avoid memory leaks is to avoid malloc() altogether.
+The wise man knows that he is stupid.
+
+Timekeeping
+-----------
+
+Track time evaluation shall be based on log file entry timestamps:
+
+start:	t_play = 0;			t_start = t
+pause:	t_play += t - t_start;		paused = 1
+play:	t_start = t;			paused = 0
+fFrR:	t_play += t - t_start + dt;	t_start = t
+EOF:	t_play += time - t_start unless paused
