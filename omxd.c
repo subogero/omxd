@@ -11,7 +11,7 @@
 #include <grp.h>
 #include "omxd.h"
 
-int logfd;
+int logfd, pidfd;
 static int ctrlpipe[2];
 static pid_t player_pid = 0;
 
@@ -74,6 +74,10 @@ static int daemonize(void)
 		return 4;
 	if (printfd(logfd, "daemonize: omxd started, SID %d\n", sid) == 0)
 		return 5;
+	pidfd = creat(I_root ? "/var/run/omxd.pid" : "omxd.pid", 0644);
+	if (pidfd < 0 || printfd(pidfd, "%d", pid) == 0)
+		return 7;
+	close(pidfd);
 	/* Create and open FIFO for command input as stdin */
 	unlink("omxctl");
 	LOG(0, "daemonize: Deleted original omxctl FIFO\n");
