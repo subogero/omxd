@@ -4,7 +4,7 @@
 
 #define OMX_CMDS "frFRpkoms-+"
 #define LIST_CMDS "iaAIHJL.hjnNdDxX"
-#define STOP_CMDS "XP"
+#define STOP_CMDS "P"
 #define CLIENT_CMDS "S"
 
 /* From omxd.c */
