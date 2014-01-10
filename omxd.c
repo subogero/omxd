@@ -18,7 +18,7 @@ static pid_t player_pid = 0;
 static int daemonize(void);
 static int read_fifo(char *line);
 static int parse(char *line);
-static int player(char *cmd, char *file);
+static void player(char *cmd, char *file);
 static void stop_playback(void);
 static void player_quit(int signum); /* SIGCHLD signal handler */
 static void drop_priv(void);
@@ -72,8 +72,7 @@ static int daemonize(void)
 	logfd = creat(I_root ? "/var/log/omxlog" : "omxlog", 0644);
 	if (logfd < 0)
 		return 4;
-	if (printfd(logfd, "daemonize: omxd started, SID %d\n", sid) == 0)
-		return 5;
+	LOG(0, "daemonize: omxd started, SID %d\n", sid);
 	pidfd = creat(I_root ? "/var/run/omxd.pid" : "omxd.pid", 0644);
 	if (pidfd < 0 || printfd(pidfd, "%d", pid) == 0)
 		return 7;
@@ -150,7 +149,7 @@ static int parse(char *line)
 }
 
 /* Control the actual omxplayer */
-static int player(char *cmd, char *file)
+static void player(char *cmd, char *file)
 {
 	if (file != NULL && *file != 0) {
 		stop_playback();
@@ -169,6 +168,15 @@ static int player(char *cmd, char *file)
 			close(ctrlpipe[0]);
 			signal(SIGCHLD, player_quit);
 			LOG(0, "player: PID=%d %s\n", player_pid, file);
+			/* 2nd omxplayer for info, redirect stdout to logfile */
+			pid_t info_pid = fork();
+			if (info_pid != 0)
+				return;
+			argv[1] = "-i";
+			close(1);
+			int omx_stdout = dup(logfd);
+			execve(argv[0], argv, NULL);
+			_exit(20);
 		} else { /* Child: exec omxplayer */
 			drop_priv();
 			close(ctrlpipe[1]);
@@ -213,6 +221,8 @@ static void player_quit(int signum)
 {
 	int status;
 	pid_t pid = wait(&status);
+	if (pid != player_pid) /* Do nothing if info-omxplayer exited */
+		return;
 	status = WEXITSTATUS(status);
 	close(ctrlpipe[1]);
 	LOG(0, "player_quit: PID=%d (%d) with %d\n", pid, player_pid, status);
@@ -323,3 +333,29 @@ int printfd(int fd, char *fmt, ...)
 	va_end(va);
 	return bytes;
 }
+
+/* Read a decimal number from a string */
+int sscand(char *str, int *num)
+{
+	int digits = 0;
+	int number = 0;
+	int sign = 1;
+	if (*str == '-') {
+		str++;
+		sign = -1;
+		digits++;
+	}
+	while (*str) {
+		int digit = *str++;
+		if (digit < '0' || digit > '9')
+			break;
+		digits++;
+		digit -= '0';
+		number *= 10;
+		number += digit;
+	}
+	number *= sign;
+	*num = number;
+	return digits;
+}
+

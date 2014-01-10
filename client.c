@@ -11,6 +11,11 @@
 #include "omxd.h"
 
 static int client_cmd(char *cmd);
+static char *player_start(char *line, int *t);
+static int player_length(char *line, int *t);
+static int player_pause(char *line, int *t);
+static int player_fFrR(char *line, int *t);
+static int player_stop(char *line);
 static char *is_url(char *file);
 static mode_t get_ftype(char *file);
 static int cmd_foreach_in(char *cmd);
@@ -68,25 +73,101 @@ static int client_cmd(char *cmd)
 		return 15;
 	char line[LINE_LENGTH];
 	char playing[LINE_LENGTH];
+	int t, t_play, t_start, t_len;
 	*playing = 0;
 	int paused = 0;
 	while (fgets(line, LINE_LENGTH, logfile)) {
-		if (strstr(line, "player: PID=") == line) {
-			strtok(line, " ");
-			strtok(NULL, " ");
-			strcpy(playing, strtok(NULL, "\n"));
+		char *start = player_start(line, &t);
+		if (start != NULL) {
+			strcpy(playing, start);
+			t_len = 0;
+			t_play = 0;
+			t_start = t;
 			paused = 0;
 		}
-		if (strstr(line, "player: Send p ") == line)
-			paused = !paused;
-		if (strstr(line, "player_quit:") == line)
+		if (player_length(line, &t)) {
+			t_len = t;
+		}
+		if (player_pause(line, &t)) {
+			if (paused) {
+				t_start = t;
+				paused = 0;
+			} else {
+				t_play += t - t_start;
+				paused  = 1;
+			}
+		}
+		int dt = player_fFrR(line, &t);
+		if (dt) {
+			t_play += dt + t - t_start;
+			if (t_play < 0)
+				t_play = 0;
+			t_start = t;
+		}
+		if (player_stop(line)) {
 			*playing = 0;
+			t_len = 0;
+			t_play = 0;
+		}
 	}
+	if (*playing != 0 && !paused)
+		t_play += time(NULL) - t_start;
 	char *st = *playing == 0 ? "Stopped" : paused ? "Paused" : "Playing";
-	printfd(1, "%s %s\n", st, playing);
+	printfd(1, "%s %d/%d %s\n", st, t_play, t_len, playing);
 	return 0;
 }
 
+/* Helpers for logfile reading */
+static char *player_start(char *line, int *t)
+{
+	if (strstr(line, "player: PID=") == NULL)
+		return NULL;
+	sscand(line, t);
+	/* time            player:            PID=x */
+	strtok(line, " "); strtok(NULL, " "); strtok(NULL, " ");
+	return strtok(NULL, "\n");
+}
+
+static int player_length(char *line, int *t)
+{
+	if (strstr(line, "file : ") != line)
+		return 0;
+	char *len = strstr(line, "length ");
+	if (len == NULL)
+		return 0;
+	strtok(len, " ");
+	return sscand(strtok(NULL, "\n"), t);
+}
+
+static int player_pause(char *line, int *t)
+{
+	if (strstr(line, "player: Send p ") == NULL)
+		return 0;
+	sscand(line, t);
+	return 1;
+}
+
+static int player_fFrR(char *line, int *t)
+{
+	if (strstr(line, "player: Send ") == NULL)
+		return 0;
+	sscand(line, t);
+	/* time            player:            Send */
+	strtok(line, " "); strtok(NULL, " "); strtok(NULL, " ");
+	char *cmd = strtok(NULL, " ");
+	return *cmd == 'f' ?   30
+	     : *cmd == 'F' ?  600
+	     : *cmd == 'r' ?  -30
+	     : *cmd == 'R' ? -600
+	     :                0;
+}
+
+static int player_stop(char *line)
+{
+	return strstr(line, "player_quit:") != NULL;
+}
+
+/* Other helpers */
 static char *is_url(char *file)
 {
 	char *url_sep = strstr(file, "://");
