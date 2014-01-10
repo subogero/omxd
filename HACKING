@@ -4,6 +4,9 @@ CODING STYLE
 Please use a variant of K&R, the Linux Coding Style:
 https://www.kernel.org/doc/Documentation/CodingStyle
 
+Also you can/should use C99 features, like variable declarations anywhere.
+Please keep the declarations as close to the actual usage as possible.
+
 COMMITS
 =======
 

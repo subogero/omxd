@@ -11,7 +11,7 @@
 #include <grp.h>
 #include "omxd.h"
 
-int logfd, pidfd;
+int logfd;
 static int ctrlpipe[2];
 static pid_t player_pid = 0;
 
@@ -73,7 +73,7 @@ static int daemonize(void)
 	if (logfd < 0)
 		return 4;
 	LOG(0, "daemonize: omxd started, SID %d\n", sid);
-	pidfd = creat(I_root ? "/var/run/omxd.pid" : "omxd.pid", 0644);
+	int pidfd = creat(I_root ? "/var/run/omxd.pid" : "omxd.pid", 0644);
 	if (pidfd < 0 || printfd(pidfd, "%d", pid) == 0)
 		return 7;
 	close(pidfd);
