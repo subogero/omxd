@@ -49,12 +49,13 @@ int main(int argc, char *argv[])
 /* Fork, umask, SID, chdir, close, logfile, FIFO */
 static int daemonize(void)
 {
+	I_root = geteuid() == 0;
 	/* Fork the real daemon */
 	pid_t pid = fork();
 	if (pid < 0)
 		return 1;
 	if (pid > 0) {
-		int pidfd = creat("omxd.pid", 0644);
+		int pidfd = creat(PID_FILE, 0644);
 		if (pidfd < 0 || printfd(pidfd, "%d", pid) == 0)
 			return 7;
 		close(pidfd);
@@ -67,7 +68,6 @@ static int daemonize(void)
 	if (sid < 0)
 		return 2;
 	/* Run in /var/run if invoked as root, or allow testing in CWD */
-	I_root = geteuid() == 0;
 	if (I_root && chdir("/var/run/") < 0)
 		return 3;
 	/* Create log file as stdout and stderr */
