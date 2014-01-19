@@ -54,6 +54,10 @@ static int daemonize(void)
 	if (pid < 0)
 		return 1;
 	if (pid > 0) {
+		int pidfd = creat("omxd.pid", 0644);
+		if (pidfd < 0 || printfd(pidfd, "%d", pid) == 0)
+			return 7;
+		close(pidfd);
 		printfd(1, "omxd daemon started, PID %d\n", pid);
 		return -1;
 	}
@@ -74,10 +78,6 @@ static int daemonize(void)
 	if (logfd < 0)
 		return 4;
 	LOG(0, "daemonize: omxd started, SID %d\n", sid);
-	int pidfd = creat(I_root ? "/var/run/omxd.pid" : "omxd.pid", 0644);
-	if (pidfd < 0 || printfd(pidfd, "%d", pid) == 0)
-		return 7;
-	close(pidfd);
 	/* Create and open FIFO for command input as stdin */
 	unlink("omxctl");
 	LOG(0, "daemonize: Deleted original omxctl FIFO\n");
