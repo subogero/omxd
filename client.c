@@ -68,9 +68,12 @@ static int client_cmd(char *cmd)
 {
 	if (*cmd != 'S')
 		return 15;
-	FILE *logfile = fopen("/var/log/omxlog", "r");
-	if (logfile == NULL)
-		return 15;
+	FILE *logfile = fopen("omxlog", "r");
+	if (logfile == NULL) {
+		logfile = fopen("/var/log/omxlog", "r");
+		if (logfile == NULL)
+			return 15;
+	}
 	char line[LINE_LENGTH];
 	char playing[LINE_LENGTH];
 	int t, t_play, t_start, t_len;

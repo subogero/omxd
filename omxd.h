@@ -15,11 +15,16 @@ int sscand(char *str, int *num);
 
 #include <time.h>
 extern int logfd; /* logfile descriptor */
+extern int I_root;
 #define LOG(level, ...) { \
 	lseek(logfd, 0, SEEK_END); \
 	printfd(logfd, "%d ", time(NULL)); \
 	printfd(logfd, __VA_ARGS__); \
 }
+
+/* Filenames */
+#define LIST_FILE (I_root ? "/var/local/omxplay" : "omxplay")
+#define LOG_FILE  (I_root ? "/var/ĺog/omxlog"    : "omxlog")
 
 /* From playlist.c */
 char *playlist(char *cmd, char *file);

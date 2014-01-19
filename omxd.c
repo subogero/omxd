@@ -12,6 +12,7 @@
 #include "omxd.h"
 
 int logfd;
+int I_root;
 static int ctrlpipe[2];
 static pid_t player_pid = 0;
 
@@ -62,14 +63,14 @@ static int daemonize(void)
 	if (sid < 0)
 		return 2;
 	/* Run in /var/run if invoked as root, or allow testing in CWD */
-	int I_root = geteuid() == 0;
+	I_root = geteuid() == 0;
 	if (I_root && chdir("/var/run/") < 0)
 		return 3;
 	/* Create log file as stdout and stderr */
 	close(0);
 	close(1);
 	close(2);
-	logfd = creat(I_root ? "/var/log/omxlog" : "omxlog", 0644);
+	logfd = creat(LOG_FILE, 0644);
 	if (logfd < 0)
 		return 4;
 	LOG(0, "daemonize: omxd started, SID %d\n", sid);
