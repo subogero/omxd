@@ -1,4 +1,5 @@
 /* (c) SZABO Gergely <szg@subogero.com>, license GNU GPL v2 */
+#define _FILE_OFFSET_BITS 64
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
