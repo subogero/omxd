@@ -18,7 +18,6 @@ static int player_pause(char *line, int *t);
 static int player_fFrR(char *line, int *t);
 static int player_stop(char *line);
 static char *is_url(char *file);
-static mode_t get_ftype(char *file);
 static int cmd_foreach_in(char *cmd);
 static int writecmd(char *cmd);
 char file_opening[32];
@@ -58,6 +57,7 @@ int client(int argc, char *argv[])
 	case S_IFDIR:
 		return cmd_foreach_in(line);
 	case S_IFREG:
+	case S_IFIFO:
 		return writecmd(line);
 	default:
 		printfd(2, "Wrong file type %d: %s\n", type, line + 2);
@@ -184,7 +184,7 @@ static char *is_url(char *file)
 	return file;
 }
 
-static mode_t get_ftype(char *file)
+mode_t get_ftype(char *file)
 {
 	struct stat filestat;
 	if (stat(file, &filestat) == -1) {

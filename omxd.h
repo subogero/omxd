@@ -13,6 +13,10 @@ int writestr(int fd, char *str);
 int printfd(int fd, char *fmt, ...);
 int sscand(char *str, int *num);
 
+/* From client.c */
+#include <sys/stat.h>
+mode_t get_ftype(char *file);
+
 #include <time.h>
 extern int logfd; /* logfile descriptor */
 #define LOG(level, ...) { \

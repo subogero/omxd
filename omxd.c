@@ -170,9 +170,13 @@ static void player(char *cmd, char *file)
 			signal(SIGCHLD, player_quit);
 			LOG(0, "player: PID=%d %s\n", player_pid, file);
 			/* 2nd omxplayer for info, redirect stdout to logfile */
+			/* But skip info if file is a FIFO */
+			if (get_ftype(file) == S_IFIFO)
+				return;
 			pid_t info_pid = fork();
 			if (info_pid != 0)
 				return;
+			sleep(2); /* Let playback start ASAP, info can wait */
 			argv[1] = "-i";
 			close(1);
 			int omx_stdout = dup(logfd);
