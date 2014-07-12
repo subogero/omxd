@@ -36,7 +36,7 @@ rm jar 2>/dev/null
 
 # Convert YouTube link URL into stream URL
 which youtube-dl || exit 2
-url=`youtube-dl -f 43/18/17/13/36/17 -g --cookies jar --write-thumbnail $url 2>rpyt.log`
+url=`youtube-dl -g --cookies jar --write-thumbnail $url 2>rpyt.log`
 [ "$url" ] || exit 3
 
 # Stream from YouTube > curl > FIFO > player
