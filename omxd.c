@@ -27,6 +27,13 @@ static char *get_output(char *cmd);
 
 int main(int argc, char *argv[])
 {
+	/* Help for -h */
+	if (argc == 2 && strncmp(argv[1], "-h", 3) == 0) {
+		writestr(1,
+#include "omxd_help.h"
+		);
+		return 0;
+	}
 	/* Client when called with options */
 	if (argc > 1) {
 		return client(argc, argv);

@@ -1,7 +1,7 @@
 .\" Generated with Ronnjs 0.3.8
 .\" http://github.com/kapouer/ronnjs/
 .
-.TH "OMXD" "1" "January 2014" "" ""
+.TH "OMXD" "1" "July 2014" "" ""
 .
 .SH "NAME"
 \fBomxd\fR \-\- daemon to maintain a playlist and play it via omxplayer
@@ -17,6 +17,9 @@ Raspberry Pi, to allow the easy implementation of various media centre apps\.
 Typically, start omxd from the /etc/rc\.local stript at boot time\.
 .
 .SH "COMMANDS"
+ \-h	Print this help text
+.
+.P
 omxd listens for commands through the /var/run/omxctl FIFO,
 please write one command at a time into it, for example:
 .
@@ -88,3 +91,6 @@ to allow easier testing\.
 .fi
 .
 .IP "" 0
+.
+.P
+\|\.

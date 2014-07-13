@@ -1,0 +1,28 @@
+.\" Generated with Ronnjs 0.3.8
+.\" http://github.com/kapouer/ronnjs/
+.
+.TH "RPYT" "1" "July 2014" "" ""
+.
+.SH "NAME"
+\fBrpyt\fR \-\- Raspberry Pi YouTube
+.
+.SH "SYNOPSIS"
+rpyt [cmd] url
+.
+.SH "DESCRIPTION"
+Supply a normal YouTube link URL, rpyt finds the related stream URL
+via youtube\-dl, and streams it using curl via FIFO rpyt\.fifo to the player,
+omxplayer or omxd\.
+.
+.SH "COMMANDS"
+ \-h	Print this help text
+ \-J url	Play URL via omxd on Jack
+ \-H url	Play URL via omxd on HDMI
+ \-I url	Play URL via omxd on current default audio
+ \-l url	Play URL via omxplayer on Jack (\-olocal)
+ \-h url	Play URL via omxplayer on HDMI (\-ohdmi)
+ url	Play URL via omxplayer on HDMI (\-ohdmi): default
+.
+.SH "FILES"
+Creates the FIFO rpyt\.fifo in the current directory, which is played
+by omxplayer\.

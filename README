@@ -15,6 +15,8 @@ Typically, start omxd from the /etc/rc.local stript at boot time.
 
 ## COMMANDS
 
+ -h	Print this help text
+
 omxd listens for commands through the /var/run/omxctl FIFO,
 please write one command at a time into it, for example:
 
@@ -74,3 +76,31 @@ to allow easier testing.
      /var/local/omxplay	playlist file, actual item indicated by >
      /var/log/omxlog	log file
      /etc/omxd.conf	defines user to run omxplayer: user=foo
+.
+rpyt(1) -- Raspberry Pi YouTube
+===============================
+
+## SYNOPSIS
+
+rpyt [cmd] url
+
+## DESCRIPTION
+
+Supply a normal YouTube link URL, rpyt finds the related stream URL
+via youtube-dl, and streams it using curl via FIFO rpyt.fifo to the player,
+omxplayer or omxd.
+
+## COMMANDS
+
+ -h	Print this help text
+ -J url	Play URL via omxd on Jack
+ -H url	Play URL via omxd on HDMI
+ -I url	Play URL via omxd on current default audio
+ -l url	Play URL via omxplayer on Jack (-olocal)
+ -h url	Play URL via omxplayer on HDMI (-ohdmi)
+ url	Play URL via omxplayer on HDMI (-ohdmi): default
+
+## FILES
+
+Creates the FIFO rpyt.fifo in the current directory, which is played
+by omxplayer.

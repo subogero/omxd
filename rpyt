@@ -1,23 +1,8 @@
 #!/bin/sh
 help() {
 	err=$1
-	cat <<EOF
-rpyt - Raspberry Pi YouTube
-
-Use: rpyt [cmd] url
-
-Finds the related stream URL via youtube-dl, and streams it using curl
-via FIFO rpyt.fifo to the player, omxplayer or omxd.
-
-Commands:
--J urA	Play URL via omxd on Jack
--H url	Play URL via omxd on HDMI
--I url	Play URL via omxd on current default audio
--l url	Play URL via omxplayer on Jack (-olocal)
--h url	Play URL via omxplayer on HDMI (-ohdmi)
--h	Print this help text
-url	Play URL via omxplayer on HDMI (-ohdmi): default
-EOF
+	cat <<HELP # make install will insert help from README
+HELP
 	exit $err
 }
 
