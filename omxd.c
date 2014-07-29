@@ -78,10 +78,10 @@ static int daemonize(void)
 	if (I_root && chdir("/var/run/") < 0)
 		return 3;
 	/* Create log file as stdout and stderr */
-	close(0);
-	close(1);
 	close(2);
 	logfd = creat(LOG_FILE, 0644);
+	close(0);
+	close(1);
 	if (logfd < 0)
 		return 4;
 	LOG(0, "daemonize: omxd started, SID %d\n", sid);
@@ -162,11 +162,12 @@ static void player(char *cmd, char *file)
 	if (file != NULL && *file != 0) {
 		stop_playback();
 		pipe(ctrlpipe);
-		char *argv[4];
+		char *argv[5];
 		argv[0] = "/usr/bin/omxplayer";
 		argv[1] = get_output(cmd);
-		argv[2] = file;
-		argv[3] = NULL;
+		argv[2] = "-I";
+		argv[3] = file;
+		argv[4] = NULL;
 		player_pid = fork();
 		if (player_pid < 0) { /* Fork error */
 			player_pid = 0;
@@ -176,27 +177,16 @@ static void player(char *cmd, char *file)
 			close(ctrlpipe[0]);
 			signal(SIGCHLD, player_quit);
 			LOG(0, "player: PID=%d %s\n", player_pid, file);
-			/* 2nd omxplayer for info, redirect stdout to logfile */
-			/* But skip info if file is a FIFO */
-			if (get_ftype(file) == S_IFIFO)
-				return;
-			pid_t info_pid = fork();
-			if (info_pid != 0)
-				return;
-			sleep(2); /* Let playback start ASAP, info can wait */
-			argv[1] = "-i";
-			close(1);
-			int omx_stdout = dup(logfd);
-			execve(argv[0], argv, NULL);
-			_exit(20);
+			return;
 		} else { /* Child: exec omxplayer */
 			drop_priv();
 			close(ctrlpipe[1]);
 			/* Redirect read end of control pipe to 0 stdin */
-			close(logfd);
-			close(0);
-			dup(ctrlpipe[0]);
-			close(ctrlpipe[0]);
+			if (ctrlpipe[0] != 0) {
+				close(0);
+				dup(ctrlpipe[0]);
+				close(ctrlpipe[0]);
+			}
 			execve(argv[0], argv, NULL);
 			_exit(20);
 		}
