@@ -134,13 +134,21 @@ static char *player_start(char *line, int *t)
 
 static int player_length(char *line, int *t)
 {
-	if (strstr(line, "file : ") != line)
+	char *key = strtok(line, " ");
+	if (strncmp(key, "Duration:", 9) != 0)
 		return 0;
-	char *len = strstr(line, "length ");
-	if (len == NULL)
-		return 0;
-	strtok(len, " ");
-	return sscand(strtok(NULL, "\n"), t);
+	*t = 0;
+	int unit;
+	char *digits = strtok(NULL, ":");
+	sscand(digits, &unit);
+	*t += 3600 * unit;
+	digits = strtok(NULL, ":");
+	sscand(digits, &unit);
+	*t += 60 * unit;
+	digits = strtok(NULL, "., ");
+	sscand(digits, &unit);
+	*t += unit;
+	return 1;
 }
 
 static int player_pause(char *line, int *t)
