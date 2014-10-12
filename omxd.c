@@ -3,26 +3,19 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/wait.h>
-#include <signal.h>
 #include <string.h>
 #include <stdarg.h>
-#include <pwd.h>
-#include <grp.h>
 #include "omxd.h"
 
 int logfd;
 int I_root;
-static int ctrlpipe[2];
-static pid_t player_pid = 0;
+struct player *pl = NULL;
 
 static int daemonize(void);
 static int read_fifo(char *line);
 static int parse(char *line);
 static void player(char *cmd, char *file);
 static void stop_playback(void);
-static void player_quit(int signum); /* SIGCHLD signal handler */
-static void drop_priv(void);
 static char *get_output(char *cmd);
 
 int main(int argc, char *argv[])
@@ -161,49 +154,10 @@ static void player(char *cmd, char *file)
 {
 	if (file != NULL && *file != 0) {
 		stop_playback();
-		pipe(ctrlpipe);
-		char *argv[5];
-		argv[0] = "/usr/bin/omxplayer";
-		argv[1] = get_output(cmd);
-		argv[2] = "-I";
-		argv[3] = file;
-		argv[4] = NULL;
-		player_pid = fork();
-		if (player_pid < 0) { /* Fork error */
-			player_pid = 0;
-			close(ctrlpipe[0]);
-			close(ctrlpipe[1]);
-		} else if (player_pid > 0) { /* Parent: set SIGCHLD handler */
-			close(ctrlpipe[0]);
-			signal(SIGCHLD, player_quit);
-			LOG(0, "player: PID=%d %s\n", player_pid, file);
-			return;
-		} else { /* Child: exec omxplayer */
-			drop_priv();
-			close(ctrlpipe[1]);
-			/* Redirect read end of control pipe to 0 stdin */
-			if (ctrlpipe[0] != 0) {
-				close(0);
-				dup(ctrlpipe[0]);
-				close(ctrlpipe[0]);
-			}
-			execve(argv[0], argv, NULL);
-			_exit(20);
-		}
-	} else if (strchr(OMX_CMDS, *cmd) != NULL && player_pid != 0) {
-		LOG(0, "player: Send %s to omxplayer\n", cmd);
-		cmd[1] = 0; /* Just one character normally */
-		/* Replace FRfr with arrow-key escape sequences */
-		if      (*cmd == 'F')
-			strcpy(cmd, "\033[A");
-		else if (*cmd == 'R')
-			strcpy(cmd, "\033[B");
-		else if (*cmd == 'f')
-			strcpy(cmd, "\033[C");
-		else if (*cmd == 'r')
-			strcpy(cmd, "\033[D");
-		writestr(ctrlpipe[1], cmd);
-	} else if (strchr(STOP_CMDS, *cmd) != NULL && player_pid != 0) {
+		pl = player_new(file, get_output(cmd), P_PLAYING);
+	} else if (strchr(OMX_CMDS, *cmd) != NULL && pl != NULL ) {
+		player_cmd(pl, cmd);
+	} else if (strchr(STOP_CMDS, *cmd) != NULL && pl != NULL) {
 		stop_playback();
 	}
 }
@@ -211,49 +165,18 @@ static void player(char *cmd, char *file)
 /* Stop the playback immediately */
 static void stop_playback(void)
 {
-	if (player_pid != 0) {
-		signal(SIGCHLD, SIG_DFL);
-		write(ctrlpipe[1], "q", 1);
-		player_quit(0);
+	if (pl != NULL) {
+		player_off(pl);
+		pl = NULL;
 	}
 }
 
 /* Signal handler for SIGCHLD when player exits */
-static void player_quit(int signum)
+void quit_callback(struct player *this)
 {
-	int status;
-	pid_t pid = wait(&status);
-	if (pid != player_pid) /* Do nothing if info-omxplayer exited */
-		return;
-	status = WEXITSTATUS(status);
-	close(ctrlpipe[1]);
-	LOG(0, "player_quit: PID=%d (%d) with %d\n", pid, player_pid, status);
-	player_pid = 0;
-	if (signum == SIGCHLD)
+	if (this == pl)
 		player("n", playlist("n", NULL));
-}
-
-/* Drop root privileges before execing omxplayer */
-static void drop_priv(void)
-{
-	int cfg = open("/etc/omxd.conf", O_RDONLY);
-	if (cfg < 0)
-		return;
-	char buffer[4096];
-	if (read(cfg, buffer, 4096) == 0)
-		return;
-	char *line = strstr(buffer, "user=");
-	if (line == NULL)
-		return;
-	strtok(line, "=");
-	char *user = strtok(NULL, "\n");
-	struct passwd *pwd = getpwnam(user);
-	if (pwd == NULL)
-		return;
-	chdir(pwd->pw_dir);
-	initgroups(pwd->pw_name, pwd->pw_gid);
-	setgid(pwd->pw_gid);
-	setuid(pwd->pw_uid);
+	
 }
 
 /* Return omxplayer argument to set output interface (Jack/HDMI) */
@@ -360,4 +283,3 @@ int sscand(char *str, int *num)
 	*num = number;
 	return digits;
 }
-
