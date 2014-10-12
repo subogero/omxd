@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <string.h>
+
 static void player_quit(int signum);
 static void drop_priv(void);
 
@@ -15,16 +16,18 @@ struct player {
 	enum pstate state;
 	char file[LINE_LENGTH];
 };
-
-static struct player p;
+#define NUM_PLAYERS 3
+static struct player p[NUM_PLAYERS];
+static struct player *find_free(void);
+static struct player *find_pid(pid_t pid);
 
 struct player *player_new(char *file, char *out, enum pstate state)
 {
-	if (p.state != P_DEAD)
-		return NULL;
 	if (file == NULL || *file == 0)
 		return NULL;
-	struct player *this = &p;
+	struct player *this = find_free();
+	if (this == NULL)
+		return NULL;
 	int ctrlpipe[2];
 	pipe(ctrlpipe);
 	char *argv[5];
@@ -99,17 +102,36 @@ static void player_quit(int signum)
 {
 	int status;
 	pid_t pid = wait(&status);
-	if (pid != p.pid)
+	struct player *this = find_pid(pid);
+	if (this == NULL)
 		return;
 	status = WEXITSTATUS(status);
 	LOG(0, "player_quit: PID=%d (%d) with %d\n", pid, status);
-	if (p.state != P_DEAD) {
-		close(p.wpipe);
-		p.pid = 0;
-		p.file[0] = 0;
-		p.state = P_DEAD;
-		quit_callback(&p);
+	if (this->state != P_DEAD) {
+		close(this->wpipe);
+		this->pid = 0;
+		this->file[0] = 0;
+		this->state = P_DEAD;
+		quit_callback(this);
 	}
+}
+
+static struct player *find_free(void)
+{
+	int i;
+	for (i = 0; i < NUM_PLAYERS; ++i)
+		if (p[i].state == P_DEAD)
+			return p + i;
+	return NULL;
+}
+
+static struct player *find_pid(pid_t pid)
+{
+	int i;
+	for (i = 0; i < NUM_PLAYERS; ++i)
+		if (p[i].pid == pid)
+			return p + i;
+	return NULL;
 }
 
 /* Drop root privileges before execing omxplayer */
