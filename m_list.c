@@ -61,9 +61,7 @@ char **m_list(char *cmd, char *file)
 		return now_next;
 	LOG(1, "No audio output switch\n");
 	if (*cmd == 'X') {
-		unlink(LIST_FILE);
-		list.size = 0;
-		list.i = -1;
+		delete(L_ALL, 0);
 		return NULL;
 	}
 	LOG(1, "No list delete\n");
