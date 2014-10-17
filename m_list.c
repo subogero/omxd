@@ -177,6 +177,7 @@ static int delete(enum list_pos base, int offs)
 static int jump(enum list_pos base, int offs)
 {
 	int i = get_pos(base, offs, 1);
+	LOG(1, "Jump to %d\n", i);
 	if (i >= 0) {
 		list.i = i;
 		return 3;
@@ -195,10 +196,8 @@ static int get_pos(enum list_pos base, int offs, int wrap)
 	if (i_base == -1)
 		return -1;
 	int i_new = i_base + offs;
-	return
-		  wrap                             ? i_new % list.size
-		: i_new >= 0 && i_new <= list.size ? i_new
-		:                                    -1;
+	int i_wrap = i_new < 0 ? list.size + i_new : i_new % list.size;
+	return wrap ? i_wrap : i_new >= 0 && i_new <= list.size ? i_new : -1;
 }
 
 static void update_dirs(void)
