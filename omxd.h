@@ -22,11 +22,13 @@ void player_cmd(struct player *this, char *cmd);
 void player_off(struct player *this);
 
 /* From omxd.c */
+void quit_callback(struct player *this);
+
+/* From utils.c */
 int writedec(int fd, int num);
 int writestr(int fd, char *str);
 int printfd(int fd, char *fmt, ...);
 int sscand(char *str, int *num);
-void quit_callback(struct player *this);
 
 #include <time.h>
 extern int logfd; /* logfile descriptor */
