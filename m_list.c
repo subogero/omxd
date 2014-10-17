@@ -33,35 +33,40 @@ char **m_list(char *cmd, char *file)
 {
 	if (list.i == -1)
 		load_list();
-	if (list.i == -1)
-		return NULL;
+	LOG(1, "List loaded size=%d i=%d\n", list.size, list.i);
 	/* Special cases when there is nothing to do */
 	if (cmd == NULL || strchr(LIST_CMDS, *cmd) == NULL)
 		return NULL;
+	LOG(1, "Cmd %s is a list command\n", cmd);
 	if (strchr("IHJ", *cmd) != NULL) {
 		now_next[0] = file;
 		now_next[1] = NULL;
 		return now_next;
 	}
+	LOG(1, "No temporary insert\n");
 	if (*cmd == 'L') {
 		strncpy(next_file, file, LINE_LENGTH);
 		inserted_next_file = 1;
 		return NULL;
 	}
+	LOG(1, "No temporary append\n");
 	if (inserted_next_file && *cmd == 'n') {
 		inserted_next_file = 0;
 		now_next[0] = next_file;
 		now_next[1] = NULL;
 		return now_next;
 	}
+	LOG(1, "Not playing temporary append\n");
 	if (strchr(".hj", *cmd) != NULL)
 		return now_next;
+	LOG(1, "No audio output switch\n");
 	if (*cmd == 'X') {
 		unlink(LIST_FILE);
 		list.size = 0;
 		list.i = -1;
 		return NULL;
 	}
+	LOG(1, "No list delete\n");
 	int change_act =
 		  *cmd == 'i' ? insert(L_ACT, 0, file)
 		: *cmd == 'a' ? insert(L_ACT, 1, file)
@@ -72,6 +77,7 @@ char **m_list(char *cmd, char *file)
 		: *cmd == 'd' ? jump(L_START, dirs[D_PREV])
 		: *cmd == 'D' ? jump(L_START, dirs[D_NEXT])
 		:               0;
+	LOG(1, "Change=%d size=%d i=%d\n", change_act, list.size, list.i);
 	if (change_act) {
 		now_next[0] = list.arr_sz[list.i];
 		now_next[1] = list.arr_sz[(list.i+1) % list.size];
