@@ -19,7 +19,7 @@ static int dirs[D_NUMOF] = { 0, };
 
 static void load_list(void);
 static void save_list(void);
-/* Return true if actual played position modified */
+/* Return mask of actual/next played position modified */
 static int insert(enum list_pos base, int offs, char *file);
 static int delete(enum list_pos base, int offs);
 static int jump(enum list_pos base, int offs);
@@ -65,7 +65,7 @@ char **m_list(char *cmd, char *file)
 		return NULL;
 	}
 	LOG(1, "No list delete\n");
-	int change_act =
+	int change =
 		  *cmd == 'i' ? insert(L_ACT, 0, file)
 		: *cmd == 'a' ? insert(L_ACT, 1, file)
 		: *cmd == 'A' ? insert(L_END, 0, file)
@@ -75,10 +75,11 @@ char **m_list(char *cmd, char *file)
 		: *cmd == 'd' ? jump(L_START, dirs[D_PREV])
 		: *cmd == 'D' ? jump(L_START, dirs[D_NEXT])
 		:               0;
-	LOG(1, "Change=%d size=%d i=%d\n", change_act, list.size, list.i);
-	if (change_act) {
-		now_next[0] = list.arr_sz[list.i];
-		now_next[1] = list.arr_sz[(list.i+1) % list.size];
+	LOG(1, "Change=%d size=%d i=%d\n", change, list.size, list.i);
+	if (change && list.size > 0) {
+		int i_next = (list.i + 1) % list.size;
+		now_next[0] = (change & 1) ? list.arr_sz[list.i] : NULL;
+		now_next[1] = (change & 2) ? list.arr_sz[i_next] : NULL;
 		return now_next;
 	}
 	return NULL;
@@ -141,7 +142,7 @@ static int insert(enum list_pos base, int offs, char *file)
 	if (list.i > i || list.i < 0)
 		list.i++;
 	save_list();
-	return list.i == i;
+	return i == list.i ? 3 : i == list.i+1 ? 2 : 0;
 }
 
 static int delete(enum list_pos base, int offs)
@@ -170,7 +171,7 @@ static int delete(enum list_pos base, int offs)
 	if (list.i > i)
 		list.i--;
 	save_list();
-	return list.i == i;
+	return i == list.i ? 3 : i == list.i+1 ? 2 : 0;
 }
 
 static int jump(enum list_pos base, int offs)
@@ -178,7 +179,7 @@ static int jump(enum list_pos base, int offs)
 	int i = get_pos(base, offs, 1);
 	if (i >= 0) {
 		list.i = i;
-		return 1;
+		return 3;
 	}
 	return 0;
 }
