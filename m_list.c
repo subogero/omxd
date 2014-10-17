@@ -119,7 +119,7 @@ static void save_list(void)
 
 static int insert(enum list_pos base, int offs, char *file)
 {
-	int i = get_pos(base, offs, 0);
+	int i = list.size == 0 ? 0 : get_pos(base, offs, 0);
 	if (i < 0)
 		return 0;
 	int size_new = list.size + 1;
