@@ -29,6 +29,8 @@ static int get_pos(enum list_pos base, int offs, int wrap);
 static void update_dirs(void);
 int new_dir(char *last, char *this);
 
+int wrapped(int i);
+
 char **m_list(char *cmd, char *file)
 {
 	if (list.i == -1)
@@ -103,6 +105,7 @@ static void load_list(void)
 
 static void save_list(void)
 {
+	update_dirs();
 	if (list.size == 0) {
 		unlink(LIST_FILE);
 		return;
@@ -180,6 +183,7 @@ static int jump(enum list_pos base, int offs)
 	LOG(1, "Jump to %d\n", i);
 	if (i >= 0) {
 		list.i = i;
+		update_dirs();
 		return 3;
 	}
 	return 0;
@@ -195,9 +199,8 @@ static int get_pos(enum list_pos base, int offs, int wrap)
 		:                   -1;
 	if (i_base == -1)
 		return -1;
-	int i_new = i_base + offs;
-	int i_wrap = i_new < 0 ? list.size + i_new : i_new % list.size;
-	return wrap ? i_wrap : i_new >= 0 && i_new <= list.size ? i_new : -1;
+	int i = i_base + offs;
+	return wrap ? wrapped(i) : i >= 0 && i <= list.size ? i : -1;
 }
 
 static void update_dirs(void)
@@ -206,20 +209,25 @@ static void update_dirs(void)
 		return;
 	memset(dirs, 0, sizeof dirs);
 	int i;
-	for (i = 0; i < list.size; ++i) {
-		if (!new_dir(i == 0 ? NULL : list.arr_sz[i-1], list.arr_sz[i]))
+	for (i = 0; i <= list.size; ++i) {
+		int wi = wrapped(i);
+		int wp = wrapped(i - 1);
+		if (!new_dir(list.arr_sz[wp], list.arr_sz[wi]))
 			continue;
-		dirs[D_LAST] = i;
+		if (i < list.size)
+			dirs[D_LAST] = i;
 		if (dirs[D_NEXT] > list.i)
 			continue;
 		dirs[D_PREV] = dirs[D_ACT];
 		dirs[D_ACT]  = dirs[D_NEXT];
-		dirs[D_NEXT] = i;
+		dirs[D_NEXT] = wi;
 	}
 	if (dirs[D_PREV] == dirs[D_ACT])
 		dirs[D_PREV] = dirs[D_LAST];
 	if (dirs[D_NEXT] == dirs[D_ACT])
 		dirs[D_NEXT] = dirs[D_1ST];
+	LOG(1, "Dirs 1st=%d prev=%d act=%d next=%d last=%d\n",
+		dirs[D_1ST],dirs[D_PREV],dirs[D_ACT],dirs[D_NEXT],dirs[D_LAST]);
 }
 
 int new_dir(char *last, char *this)
@@ -233,4 +241,9 @@ int new_dir(char *last, char *this)
 	if (strncmp(last, this, this_size) != 0)
 		return 1;
 	return 0;
+}
+
+int wrapped(int i)
+{
+	return i < 0 ? list.size + i : i % list.size;
 }

@@ -21,7 +21,13 @@ int main(void)
 	print_now_next(m_list("A", "/spam/1"));
 	print_now_next(m_list("A", "/spam/2"));
 	print_now_next(m_list("x", NULL));
+	print_now_next(m_list("A", "/blabla/1"));
+	print_now_next(m_list("A", "/blabla/2"));
+	print_now_next(m_list("A", "/bar/1"));
+	print_now_next(m_list("A", "/bar/2"));
 	print_now_next(m_list("n", NULL));
+	print_now_next(m_list("N", NULL));
+	print_now_next(m_list("N", NULL));
 	print_now_next(m_list("N", NULL));
 	print_now_next(m_list("N", NULL));
 }
