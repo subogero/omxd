@@ -28,6 +28,6 @@ int main(void)
 	print_now_next(m_list("n", NULL));
 	print_now_next(m_list("N", NULL));
 	print_now_next(m_list("N", NULL));
-	print_now_next(m_list("N", NULL));
-	print_now_next(m_list("N", NULL));
+	print_now_next(m_list("d", NULL));
+	print_now_next(m_list("D", NULL));
 }

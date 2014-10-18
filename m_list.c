@@ -74,8 +74,8 @@ char **m_list(char *cmd, char *file)
 		: *cmd == 'x' ? delete(L_ACT, 0)
 		: *cmd == 'n' ? jump(L_ACT,  1)
 		: *cmd == 'N' ? jump(L_ACT, -1)
-		: *cmd == 'd' ? jump(L_START, dirs[D_PREV])
-		: *cmd == 'D' ? jump(L_START, dirs[D_NEXT])
+		: *cmd == 'd' ? jump(L_START, dirs[D_NEXT])
+		: *cmd == 'D' ? jump(L_START, dirs[D_PREV])
 		:               0;
 	LOG(1, "Change=%d size=%d i=%d\n", change, list.size, list.i);
 	if (change && list.size > 0) {
