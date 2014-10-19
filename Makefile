@@ -31,3 +31,5 @@ uninstall:
 	rm /usr/share/man/man1/rpyt.1 
 m_list: test_m_list.c m_list.c utils.c m_list.h
 	gcc -g -o m_list test_m_list.c m_list.c utils.c
+debug: omxd
+	strace -p `./omxd -d | sed 's/.*PID //'` -o st &

@@ -73,8 +73,6 @@ void player_cmd(struct player *this, char *cmd)
 		return;
 	if (strchr(OMX_CMDS, *cmd) == NULL)
 		return;
-	LOG(0, "player: Send %s to omxplayer\n", cmd);
-	cmd[1] = 0; /* Just one character normally */
 	/* Replace FRfr with arrow-key escape sequences */
 	if      (*cmd == 'F')
 		cmd = "\033[A";
@@ -85,6 +83,8 @@ void player_cmd(struct player *this, char *cmd)
 	else if (*cmd == 'r')
 		cmd = "\033[D";
 	writestr(this->wpipe, cmd);
+	LOG(0, "player: Send %s to omxplayer PID/fd %d/%d\n",
+		cmd, this->pid, this->wpipe);
 }
 
 void player_off(struct player *this)
@@ -106,7 +106,6 @@ static void player_quit(int signum)
 	if (this == NULL)
 		return;
 	status = WEXITSTATUS(status);
-	LOG(0, "player_quit: PID=%d (%d) with %d\n", pid, status);
 	if (this->state != P_DEAD) {
 		close(this->wpipe);
 		this->pid = 0;
@@ -114,6 +113,7 @@ static void player_quit(int signum)
 		this->state = P_DEAD;
 		quit_callback(this);
 	}
+	LOG(0, "player_quit: PID=%d (%d) with %d\n", pid, status);
 }
 
 static struct player *find_free(void)

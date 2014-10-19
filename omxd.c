@@ -7,13 +7,14 @@
 #include "omxd.h"
 #include "m_list.h"
 
-struct player *pl = NULL;
+struct player *now = NULL;
+struct player *next = NULL;
 
 static int daemonize(void);
 static int read_fifo(char *line);
 static int parse(char *line);
 static void player(char *cmd, char **files);
-static void stop_playback(void);
+static void stop_playback(struct player *this);
 static char *get_output(char *cmd);
 
 int main(int argc, char *argv[])
@@ -153,31 +154,61 @@ static int parse(char *line)
 /* Control the actual omxplayer */
 static void player(char *cmd, char **files)
 {
-	if (files != NULL && files[0] != NULL && *files[0] != 0) {
-		stop_playback();
-		pl = player_new(files[0], get_output(cmd), P_PLAYING);
-	} else if (strchr(OMX_CMDS, *cmd) != NULL && pl != NULL ) {
-		player_cmd(pl, cmd);
-	} else if (strchr(STOP_CMDS, *cmd) != NULL && pl != NULL) {
-		stop_playback();
+	if (strchr(STOP_CMDS, *cmd) != NULL) {
+		stop_playback(now);
+		stop_playback(next);
+		return;
+	}
+	if (strchr(OMX_CMDS, *cmd) != NULL && now != NULL ) {
+		player_cmd(now, cmd);
+		return;
+	}
+	if (files == NULL)
+		return;
+	if (files[0] != NULL && *files[0] != 0) {
+		stop_playback(now);
+		now = player_new(files[0], get_output(cmd), P_PLAYING);
+	}
+	if (files[1] != NULL && *files[1] != 0) {
+		sleep(2);
+		stop_playback(next);
+		next = player_new(files[1], get_output(cmd), P_PAUSED);
 	}
 }
 
 /* Stop the playback immediately */
-static void stop_playback(void)
+static void stop_playback(struct player *this)
 {
-	if (pl != NULL) {
-		player_off(pl);
-		pl = NULL;
+	if (this != NULL) {
+		player_off(this);
+		this = NULL;
 	}
 }
 
 /* Signal handler for SIGCHLD when player exits */
 void quit_callback(struct player *this)
 {
-	if (this == pl)
-		player("n", m_list("n", NULL));
-	
+	if (this != now)
+		return;
+	int now_started = 0;
+	if (next != NULL) {
+		now = next;
+		next = NULL;
+		player_cmd(now, "p");
+		now_started = 1;
+	}
+	char **now_next = m_list("n", NULL);
+	if (now_next == NULL)
+		return;
+	if (now_next[0] != NULL && !now_started) {
+		LOG(1, "Callback starting %s\n", now_next[0]);
+		now = player_new(now_next[0], get_output("n"), P_PLAYING);
+	}
+	if (now_next[1] != NULL) {
+		sleep(2);
+		LOG(1, "Callback priming %s\n", now_next[1]);
+		next = player_new(now_next[1], get_output("n"), P_PAUSED);
+	}
 }
 
 /* Return omxplayer argument to set output interface (Jack/HDMI) */
