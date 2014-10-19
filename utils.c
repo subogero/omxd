@@ -4,6 +4,7 @@
 
 int I_root;
 int logfd;
+int loglevel = 0;
 
 /* Write number in decimal format to file descriptor, printf() is BLOATED!!! */
 int writedec(int fd, int num)

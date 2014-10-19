@@ -27,7 +27,10 @@ int main(int argc, char *argv[])
 	}
 	/* Client when called with options */
 	if (argc > 1) {
-		return client(argc, argv);
+		if (strncmp(argv[1], "-d", 3) == 0)
+			loglevel = 1;
+		else
+			return client(argc, argv);
 	}
 	int daemon_error = daemonize();
 	if (daemon_error > 0)
@@ -78,10 +81,10 @@ static int daemonize(void)
 	LOG(0, "daemonize: omxd started, SID %d\n", sid);
 	/* Create and open FIFO for command input as stdin */
 	unlink("omxctl");
-	LOG(0, "daemonize: Deleted original omxctl FIFO\n");
+	LOG(1, "daemonize: Deleted original omxctl FIFO\n");
 	if (mknod("omxctl", S_IFIFO | 0622, 0) < 0)
 		return 6;
-	LOG(0, "daemonize: Created new omxctl FIFO\n");
+	LOG(1, "daemonize: Created new omxctl FIFO\n");
 	return 0;
 }
 
@@ -95,19 +98,19 @@ static int read_fifo(char *line)
 			LOG(0, "read_fifo: Can't open omxctl\n");
 			return -1;
 		} else {
-			LOG(0, "read_fifo: Client opened omxctl\n");
+			LOG(1, "read_fifo: Client opened omxctl\n");
 		}
 	}
 	int i = 0;
 	while (1) {
 		if (!read(cmdfd, line + i, 1)) {
-			LOG(0, "read_fifo: Client closed omxctl\n");
+			LOG(1, "read_fifo: Client closed omxctl\n");
 			close(cmdfd);
 			cmdfd = -1;
 			line[i] = 0;
 			return i;
 		} else if (line[i] == '\n') {
-			LOG(0, "read_fifo: omxctl end of line\n");
+			LOG(1, "read_fifo: omxctl end of line\n");
 			line[i] = 0;
 			return i;
 		} else if (i == LINE_LENGTH - 2) {

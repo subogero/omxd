@@ -32,7 +32,8 @@ int sscand(char *str, int *num);
 
 #include <time.h>
 extern int logfd; /* logfile descriptor */
-#define LOG(level, ...) { \
+extern int loglevel;
+#define LOG(level, ...) if ((level) <= loglevel) { \
 	lseek(logfd, 0, SEEK_END); \
 	printfd(logfd, "%d ", time(NULL)); \
 	printfd(logfd, __VA_ARGS__); \
