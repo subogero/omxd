@@ -5,13 +5,14 @@
 #include <sys/types.h>
 #include <string.h>
 #include "omxd.h"
+#include "m_list.h"
 
 struct player *pl = NULL;
 
 static int daemonize(void);
 static int read_fifo(char *line);
 static int parse(char *line);
-static void player(char *cmd, char *file);
+static void player(char *cmd, char **files);
 static void stop_playback(void);
 static char *get_output(char *cmd);
 
@@ -141,17 +142,17 @@ static int parse(char *line)
 		file++;
 	}
 	if (cmd != NULL && *cmd != 0) {
-		player(cmd, playlist(cmd, file));
+		player(cmd, m_list(cmd, file));
 	}
 	return cmd != NULL ? *cmd : 0;
 }
 
 /* Control the actual omxplayer */
-static void player(char *cmd, char *file)
+static void player(char *cmd, char **files)
 {
-	if (file != NULL && *file != 0) {
+	if (files != NULL && files[0] != NULL && *files[0] != 0) {
 		stop_playback();
-		pl = player_new(file, get_output(cmd), P_PLAYING);
+		pl = player_new(files[0], get_output(cmd), P_PLAYING);
 	} else if (strchr(OMX_CMDS, *cmd) != NULL && pl != NULL ) {
 		player_cmd(pl, cmd);
 	} else if (strchr(STOP_CMDS, *cmd) != NULL && pl != NULL) {
@@ -172,7 +173,7 @@ static void stop_playback(void)
 void quit_callback(struct player *this)
 {
 	if (this == pl)
-		player("n", playlist("n", NULL));
+		player("n", m_list("n", NULL));
 	
 }
 
