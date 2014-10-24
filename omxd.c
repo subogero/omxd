@@ -188,6 +188,10 @@ static void stop_playback(struct player *this)
 /* Signal handler for SIGCHLD when player exits */
 void quit_callback(struct player *this)
 {
+	if (this == next) {
+		next = NULL;
+		return;
+	}
 	if (this != now)
 		return;
 	int now_started = 0;
