@@ -47,6 +47,17 @@ memory leaks. Memory leaks in a daemon are bad.
 The stupid man's way to avoid memory leaks is to avoid malloc() altogether.
 The wise man knows that he is stupid.
 
+Why store the playlist in memory, then ?!
+-----------------------------------------
+
+With the advent of the low-gap playback, the playlist returns 2 tracks.
+It was much easier to implement with a dynamic in-memory playlist.
+The in-file playlist.c was messy enough before, so it was abandoned.
+Welcome to the m_list.c in-memory playlist: the list itself is not a
+linked list but a dynamic array of pointers to dynamically allocated strings.
+A dynamic array is directly addressable and needs an occasional realloc()
+instead of many messy malloc() and free() calls.
+
 Timekeeping
 -----------
 
