@@ -1,5 +1,5 @@
-omxd: omxd.c playlist.c omxd.h client.c Makefile omxd_help.h
-	gcc -g -o omxd omxd.c playlist.c client.c
+omxd: omxd.c omxd.h client.c player.c utils.c m_list.c Makefile omxd_help.h
+	gcc -g -o omxd omxd.c client.c player.c utils.c m_list.c
 omxd_help.h: README Makefile
 	sed -rn '1,/^\.$$/ s/^(.*)$$/"\1\\n"/p' README >omxd_help.h
 omxd.1: README Makefile
@@ -29,3 +29,11 @@ uninstall:
 	rm /etc/logrotate.d/omxd
 	rm /usr/share/man/man1/omxd.1 
 	rm /usr/share/man/man1/rpyt.1 
+m_list: test_m_list.c m_list.c utils.c m_list.h
+	gcc -g -o m_list test_m_list.c m_list.c utils.c
+debug: omxd
+	-killall omxd
+	-killall omxplayer.bin
+	strace -p `./omxd -d | sed 's/.*PID //'` -o st &
+ps:
+	pstree -pu | grep omx

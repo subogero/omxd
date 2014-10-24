@@ -3,26 +3,18 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/wait.h>
-#include <signal.h>
 #include <string.h>
-#include <stdarg.h>
-#include <pwd.h>
-#include <grp.h>
 #include "omxd.h"
+#include "m_list.h"
 
-int logfd;
-int I_root;
-static int ctrlpipe[2];
-static pid_t player_pid = 0;
+struct player *now = NULL;
+struct player *next = NULL;
 
 static int daemonize(void);
 static int read_fifo(char *line);
 static int parse(char *line);
-static void player(char *cmd, char *file);
-static void stop_playback(void);
-static void player_quit(int signum); /* SIGCHLD signal handler */
-static void drop_priv(void);
+static void player(char *cmd, char **files);
+static void stop_playback(struct player *this);
 static char *get_output(char *cmd);
 
 int main(int argc, char *argv[])
@@ -36,7 +28,10 @@ int main(int argc, char *argv[])
 	}
 	/* Client when called with options */
 	if (argc > 1) {
-		return client(argc, argv);
+		if (strncmp(argv[1], "-d", 3) == 0)
+			loglevel = 1;
+		else
+			return client(argc, argv);
 	}
 	int daemon_error = daemonize();
 	if (daemon_error > 0)
@@ -87,10 +82,10 @@ static int daemonize(void)
 	LOG(0, "daemonize: omxd started, SID %d\n", sid);
 	/* Create and open FIFO for command input as stdin */
 	unlink("omxctl");
-	LOG(0, "daemonize: Deleted original omxctl FIFO\n");
+	LOG(1, "daemonize: Deleted original omxctl FIFO\n");
 	if (mknod("omxctl", S_IFIFO | 0622, 0) < 0)
 		return 6;
-	LOG(0, "daemonize: Created new omxctl FIFO\n");
+	LOG(1, "daemonize: Created new omxctl FIFO\n");
 	return 0;
 }
 
@@ -104,19 +99,19 @@ static int read_fifo(char *line)
 			LOG(0, "read_fifo: Can't open omxctl\n");
 			return -1;
 		} else {
-			LOG(0, "read_fifo: Client opened omxctl\n");
+			LOG(1, "read_fifo: Client opened omxctl\n");
 		}
 	}
 	int i = 0;
 	while (1) {
 		if (!read(cmdfd, line + i, 1)) {
-			LOG(0, "read_fifo: Client closed omxctl\n");
+			LOG(1, "read_fifo: Client closed omxctl\n");
 			close(cmdfd);
 			cmdfd = -1;
 			line[i] = 0;
 			return i;
 		} else if (line[i] == '\n') {
-			LOG(0, "read_fifo: omxctl end of line\n");
+			LOG(1, "read_fifo: omxctl end of line\n");
 			line[i] = 0;
 			return i;
 		} else if (i == LINE_LENGTH - 2) {
@@ -151,109 +146,81 @@ static int parse(char *line)
 		file++;
 	}
 	if (cmd != NULL && *cmd != 0) {
-		player(cmd, playlist(cmd, file));
+		player(cmd, m_list(cmd, file));
 	}
 	return cmd != NULL ? *cmd : 0;
 }
 
 /* Control the actual omxplayer */
-static void player(char *cmd, char *file)
+static void player(char *cmd, char **files)
 {
-	if (file != NULL && *file != 0) {
-		stop_playback();
-		pipe(ctrlpipe);
-		char *argv[5];
-		argv[0] = "/usr/bin/omxplayer";
-		argv[1] = get_output(cmd);
-		argv[2] = "-I";
-		argv[3] = file;
-		argv[4] = NULL;
-		player_pid = fork();
-		if (player_pid < 0) { /* Fork error */
-			player_pid = 0;
-			close(ctrlpipe[0]);
-			close(ctrlpipe[1]);
-		} else if (player_pid > 0) { /* Parent: set SIGCHLD handler */
-			close(ctrlpipe[0]);
-			signal(SIGCHLD, player_quit);
-			LOG(0, "player: PID=%d %s\n", player_pid, file);
-			return;
-		} else { /* Child: exec omxplayer */
-			drop_priv();
-			close(ctrlpipe[1]);
-			/* Redirect read end of control pipe to 0 stdin */
-			if (ctrlpipe[0] != 0) {
-				close(0);
-				dup(ctrlpipe[0]);
-				close(ctrlpipe[0]);
-			}
-			execve(argv[0], argv, NULL);
-			_exit(20);
-		}
-	} else if (strchr(OMX_CMDS, *cmd) != NULL && player_pid != 0) {
-		LOG(0, "player: Send %s to omxplayer\n", cmd);
-		cmd[1] = 0; /* Just one character normally */
-		/* Replace FRfr with arrow-key escape sequences */
-		if      (*cmd == 'F')
-			strcpy(cmd, "\033[A");
-		else if (*cmd == 'R')
-			strcpy(cmd, "\033[B");
-		else if (*cmd == 'f')
-			strcpy(cmd, "\033[C");
-		else if (*cmd == 'r')
-			strcpy(cmd, "\033[D");
-		writestr(ctrlpipe[1], cmd);
-	} else if (strchr(STOP_CMDS, *cmd) != NULL && player_pid != 0) {
-		stop_playback();
+	if (strchr(STOP_CMDS, *cmd) != NULL) {
+		LOG(0, "player: stop all\n");
+		stop_playback(now);
+		stop_playback(next);
+		return;
+	}
+	if (strchr(OMX_CMDS, *cmd) != NULL && now != NULL ) {
+		if (*cmd == 'p')
+			LOG(0, "player: play/pause\n")
+		else
+			LOG(0, "player: send %s\n", cmd)
+		player_cmd(now, cmd);
+		return;
+	}
+	if (files == NULL)
+		return;
+	if (files[0] != NULL && *files[0] != 0) {
+		stop_playback(now);
+		LOG(0, "player: start %s\n", files[0]);
+		now = player_new(files[0], get_output(cmd), P_PLAYING);
+	}
+	if (files[1] != NULL && *files[1] != 0) {
+		sleep(2);
+		stop_playback(next);
+		LOG(1, "player: prime %s\n", files[1]);
+		next = player_new(files[1], get_output(cmd), P_PAUSED);
 	}
 }
 
 /* Stop the playback immediately */
-static void stop_playback(void)
+static void stop_playback(struct player *this)
 {
-	if (player_pid != 0) {
-		signal(SIGCHLD, SIG_DFL);
-		write(ctrlpipe[1], "q", 1);
-		player_quit(0);
+	if (this != NULL) {
+		player_off(this);
+		this = NULL;
 	}
 }
 
 /* Signal handler for SIGCHLD when player exits */
-static void player_quit(int signum)
+void quit_callback(struct player *this)
 {
-	int status;
-	pid_t pid = wait(&status);
-	if (pid != player_pid) /* Do nothing if info-omxplayer exited */
+	if (this == next) {
+		next = NULL;
 		return;
-	status = WEXITSTATUS(status);
-	close(ctrlpipe[1]);
-	LOG(0, "player_quit: PID=%d (%d) with %d\n", pid, player_pid, status);
-	player_pid = 0;
-	if (signum == SIGCHLD)
-		player("n", playlist("n", NULL));
-}
-
-/* Drop root privileges before execing omxplayer */
-static void drop_priv(void)
-{
-	int cfg = open("/etc/omxd.conf", O_RDONLY);
-	if (cfg < 0)
+	}
+	if (this != now)
 		return;
-	char buffer[4096];
-	if (read(cfg, buffer, 4096) == 0)
+	int now_started = 0;
+	if (next != NULL) {
+		now = next;
+		next = NULL;
+		player_cmd(now, "p");
+		now_started = 1;
+	}
+	char **now_next = m_list("n", NULL);
+	if (now_next == NULL)
 		return;
-	char *line = strstr(buffer, "user=");
-	if (line == NULL)
-		return;
-	strtok(line, "=");
-	char *user = strtok(NULL, "\n");
-	struct passwd *pwd = getpwnam(user);
-	if (pwd == NULL)
-		return;
-	chdir(pwd->pw_dir);
-	initgroups(pwd->pw_name, pwd->pw_gid);
-	setgid(pwd->pw_gid);
-	setuid(pwd->pw_uid);
+	if (now_next[0] != NULL)
+		LOG(0, "quit_callback: start %s\n", now_next[0]);
+	if (now_next[0] != NULL && !now_started) {
+		now = player_new(now_next[0], get_output("n"), P_PLAYING);
+	}
+	if (now_next[1] != NULL) {
+		sleep(2);
+		LOG(1, "quit_callback: prime %s\n", now_next[1]);
+		next = player_new(now_next[1], get_output("n"), P_PAUSED);
+	}
 }
 
 /* Return omxplayer argument to set output interface (Jack/HDMI) */
@@ -275,89 +242,3 @@ static char *get_output(char *cmd)
 		output_now = output;
 	return outputs[output_now];
 }
-
-/* Write number in decimal format to file descriptor, printf() is BLOATED!!! */
-int writedec(int fd, int num)
-{
-	int bytes = 0;
-	/* Special case: negative numbers (print neg.sign) */
-	if (num < 0) {
-		write(fd, "-", 1);
-		num *= -1;
-		bytes++;
-	}
-	/*
-	 * If num >= 10, print More Significant DigitS first by recursive call
-	 * then we print Least Significatn Digit ourselves.
-	 */
-	int msds = num / 10;
-	int lsd = num % 10;
-	if (msds)
-		bytes += writedec(fd, msds);
-	char digit = '0' + lsd;
-	write(fd, &digit, 1);
-	return ++bytes;
-}
-
-/* Write a C-string to a file descriptor */
-int writestr(int fd, char *str)
-{
-	int len = strlen(str);
-	return write(fd, str, len);
-}
-
-/* Formatted printing into a file descriptor */
-int printfd(int fd, char *fmt, ...)
-{
-	int bytes = 0;
-	int i_val = 0;
-	va_list va;
-	va_start(va, fmt);
-	while (*fmt) {
-		char *perc = strchr(fmt, '%');
-		int len = perc == NULL ? strlen(fmt) : perc - fmt;
-		if (len) {
-			bytes += write(fd, fmt, len);
-			fmt += len;
-		} else {
-			fmt = perc + 1;
-			if (*fmt == 0)
-				continue;
-			else if (*fmt == '%')
-				bytes += write(fd, fmt, 1);
-			else if (*fmt == 'd')
-				bytes += writedec(fd, va_arg(va, int));
-			else if (*fmt == 's')
-				bytes += writestr(fd, va_arg(va, char*));
-			fmt++;
-		}
-	}
-	va_end(va);
-	return bytes;
-}
-
-/* Read a decimal number from a string */
-int sscand(char *str, int *num)
-{
-	int digits = 0;
-	int number = 0;
-	int sign = 1;
-	if (*str == '-') {
-		str++;
-		sign = -1;
-		digits++;
-	}
-	while (*str) {
-		int digit = *str++;
-		if (digit < '0' || digit > '9')
-			break;
-		digits++;
-		digit -= '0';
-		number *= 10;
-		number += digit;
-	}
-	number *= sign;
-	*num = number;
-	return digits;
-}
-

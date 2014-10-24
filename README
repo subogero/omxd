@@ -3,7 +3,7 @@ omxd(1) --  daemon to maintain a playlist and play it via omxplayer
 
 ## SYNOPSIS
 
- omxd
+ omxd [-d]
  echo <command> [abs-path] > /var/run/omxctl
  omxd <command> [rel-path]
 
@@ -13,9 +13,12 @@ The omxd daemon plays your playlist even if you've disconnected from your
 Raspberry Pi, to allow the easy implementation of various media centre apps.
 Typically, start omxd from the /etc/rc.local stript at boot time.
 
-## COMMANDS
+## OPTIONS
 
  -h	Print this help text
+ -d	Start daemon with debug logging enabled
+
+## COMMANDS
 
 omxd listens for commands through the /var/run/omxctl FIFO,
 please write one command at a time into it, for example:
