@@ -35,38 +35,31 @@ char **m_list(char *cmd, char *file)
 {
 	if (list.i == -1)
 		load_list();
-	LOG(1, "List loaded size=%d i=%d\n", list.size, list.i);
 	/* Special cases when there is nothing to do */
 	if (cmd == NULL || strchr(LIST_CMDS, *cmd) == NULL)
 		return NULL;
-	LOG(1, "Cmd %s is a list command\n", cmd);
 	if (strchr("IHJ", *cmd) != NULL) {
 		now_next[0] = file;
 		now_next[1] = NULL;
 		return now_next;
 	}
-	LOG(1, "No temporary insert\n");
 	if (*cmd == 'L') {
 		strncpy(next_file, file, LINE_LENGTH);
 		inserted_next_file = 1;
 		return NULL;
 	}
-	LOG(1, "No temporary append\n");
 	if (inserted_next_file && *cmd == 'n') {
 		inserted_next_file = 0;
 		now_next[0] = next_file;
 		now_next[1] = NULL;
 		return now_next;
 	}
-	LOG(1, "Not playing temporary append\n");
 	if (strchr(".hj", *cmd) != NULL)
 		return now_next;
-	LOG(1, "No audio output switch\n");
 	if (*cmd == 'X') {
 		delete(L_ALL, 0);
 		return NULL;
 	}
-	LOG(1, "No list delete\n");
 	int change =
 		  *cmd == 'i' ? insert(L_ACT, 0, file)
 		: *cmd == 'a' ? insert(L_ACT, 1, file)
@@ -77,7 +70,7 @@ char **m_list(char *cmd, char *file)
 		: *cmd == 'd' ? jump(L_START, dirs[D_NEXT])
 		: *cmd == 'D' ? jump(L_START, dirs[D_PREV])
 		:               0;
-	LOG(1, "Change=%d size=%d i=%d\n", change, list.size, list.i);
+	LOG(1, "m_list Change=%d size=%d i=%d\n", change, list.size, list.i);
 	if (change && list.size > 0) {
 		int i_next = (list.i + 1) % list.size;
 		now_next[0] = (change & 1) ? list.arr_sz[list.i] : NULL;
@@ -180,7 +173,6 @@ static int delete(enum list_pos base, int offs)
 static int jump(enum list_pos base, int offs)
 {
 	int i = get_pos(base, offs, 1);
-	LOG(1, "Jump to %d\n", i);
 	if (i >= 0) {
 		list.i = i;
 		update_dirs();
@@ -226,8 +218,6 @@ static void update_dirs(void)
 		dirs[D_PREV] = dirs[D_LAST];
 	if (dirs[D_NEXT] == dirs[D_ACT])
 		dirs[D_NEXT] = dirs[D_1ST];
-	LOG(1, "Dirs 1st=%d prev=%d act=%d next=%d last=%d\n",
-		dirs[D_1ST],dirs[D_PREV],dirs[D_ACT],dirs[D_NEXT],dirs[D_LAST]);
 }
 
 int new_dir(char *last, char *this)
