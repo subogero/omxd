@@ -13,7 +13,7 @@
 
 static int client_cmd(char *cmd);
 static char *player_start(char *line, int *t);
-static int player_length(char *line, int *t);
+static char *player_length(char *line, int *t);
 static int player_pause(char *line, int *t);
 static int player_fFrR(char *line, int *t);
 static int player_stop(char *line);
@@ -77,9 +77,10 @@ static int client_cmd(char *cmd)
 	}
 	char line[LINE_LENGTH];
 	char playing[LINE_LENGTH];
-	int t, t_play, t_start, t_len;
+	int t, t_play, t_start, t_len, t_len_tmp;
 	*playing = 0;
 	int paused = 0;
+	char *duration_of = NULL;
 	while (fgets(line, LINE_LENGTH, logfile)) {
 		char *start = player_start(line, &t);
 		if (start != NULL) {
@@ -89,9 +90,14 @@ static int client_cmd(char *cmd)
 			t_start = t;
 			paused = 0;
 		}
-		if (player_length(line, &t)) {
-			t_len = t;
+		char *dur_of = player_length(line, &t);
+		if (dur_of != NULL) {
+			duration_of = dur_of;
+			t_len_tmp = t;
 		}
+		if (duration_of != NULL && *playing != 0 &&
+		    strstr(duration_of, playing) != NULL)
+			t_len = t_len_tmp;
 		if (player_pause(line, &t)) {
 			if (paused) {
 				t_start = t;
@@ -124,19 +130,24 @@ static int client_cmd(char *cmd)
 /* Helpers for logfile reading */
 static char *player_start(char *line, int *t)
 {
-	if (strstr(line, "player: PID=") == NULL)
+	if (strstr(line, "player: start ") == NULL &&
+	    strstr(line, "quit_callback: start ") == NULL)
 		return NULL;
 	sscand(line, t);
-	/* time            player:            PID=x */
-	strtok(line, " "); strtok(NULL, " "); strtok(NULL, " ");
-	return strtok(NULL, "\n");
+	char *track = strstr(line, "start ") + 6;
+	return strtok(track, "\n");
 }
 
-static int player_length(char *line, int *t)
+static char *player_length(char *line, int *t)
 {
-	char *key = strtok(line, " ");
+	static char omxinput[LINE_LENGTH] = { 0, };
+	if (strstr(line, "Input #") == line)
+		strcpy(omxinput, line);
+	char tokens[LINE_LENGTH];
+	strcpy(tokens, line);
+	char *key = strtok(tokens, " ");
 	if (strncmp(key, "Duration:", 9) != 0)
-		return 0;
+		return NULL;
 	*t = 0;
 	int unit;
 	char *digits = strtok(NULL, ":");
@@ -148,12 +159,12 @@ static int player_length(char *line, int *t)
 	digits = strtok(NULL, "., ");
 	sscand(digits, &unit);
 	*t += unit;
-	return 1;
+	return omxinput;
 }
 
 static int player_pause(char *line, int *t)
 {
-	if (strstr(line, "player: Send p ") == NULL)
+	if (strstr(line, "player: play/pause") == NULL)
 		return 0;
 	sscand(line, t);
 	return 1;
@@ -161,22 +172,20 @@ static int player_pause(char *line, int *t)
 
 static int player_fFrR(char *line, int *t)
 {
-	if (strstr(line, "player: Send ") == NULL)
+	if (strstr(line, "player: send ") == NULL)
 		return 0;
 	sscand(line, t);
-	/* time            player:            Send */
-	strtok(line, " "); strtok(NULL, " "); strtok(NULL, " ");
-	char *cmd = strtok(NULL, " ");
+	char *cmd = strstr(line, "send ") + 5;
 	return *cmd == 'f' ?   30
 	     : *cmd == 'F' ?  600
 	     : *cmd == 'r' ?  -30
 	     : *cmd == 'R' ? -600
-	     :                0;
+	     :                  0;
 }
 
 static int player_stop(char *line)
 {
-	return strstr(line, "player_quit:") != NULL;
+	return strstr(line, "player: stop all") != NULL;
 }
 
 /* Other helpers */

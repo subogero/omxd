@@ -52,7 +52,7 @@ struct player *player_new(char *file, char *out, enum pstate state)
 		signal(SIGCHLD, player_quit);
 		signal(SIGPIPE, player_quit);
 		strcpy(this->file, file);
-		LOG(0, "player_new: PID=%d %s\n", this->pid, file);
+		LOG(1, "player_new: PID=%d %s\n", this->pid, file);
 		return this;
 	} else { /* Child: exec omxplayer */
 		drop_priv();
@@ -84,7 +84,7 @@ void player_cmd(struct player *this, char *cmd)
 	else if (*cmd == 'r')
 		cmd = "\033[D";
 	writestr(this->wpipe, cmd);
-	LOG(0, "player_cmd: Send %s to omxplayer PID/fd %d/%d\n",
+	LOG(1, "player_cmd: Send %s to omxplayer PID/fd %d/%d\n",
 		cmd, this->pid, this->wpipe);
 }
 
@@ -117,7 +117,7 @@ static void player_quit(int signum)
 		this->state = P_DEAD;
 		quit_callback(this);
 	}
-	LOG(0, "player_quit: PID=%d (%d) with %d\n", pid, status);
+	LOG(1, "player_quit: PID=%d (%d) with %d\n", pid, status);
 }
 
 static struct player *find_free(void)

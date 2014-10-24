@@ -155,11 +155,16 @@ static int parse(char *line)
 static void player(char *cmd, char **files)
 {
 	if (strchr(STOP_CMDS, *cmd) != NULL) {
+		LOG(0, "player: stop all\n");
 		stop_playback(now);
 		stop_playback(next);
 		return;
 	}
 	if (strchr(OMX_CMDS, *cmd) != NULL && now != NULL ) {
+		if (*cmd == 'p')
+			LOG(0, "player: play/pause\n")
+		else
+			LOG(0, "player: send %s\n", cmd)
 		player_cmd(now, cmd);
 		return;
 	}
@@ -167,11 +172,13 @@ static void player(char *cmd, char **files)
 		return;
 	if (files[0] != NULL && *files[0] != 0) {
 		stop_playback(now);
+		LOG(0, "player: start %s\n", files[0]);
 		now = player_new(files[0], get_output(cmd), P_PLAYING);
 	}
 	if (files[1] != NULL && *files[1] != 0) {
 		sleep(2);
 		stop_playback(next);
+		LOG(1, "player: prime %s\n", files[1]);
 		next = player_new(files[1], get_output(cmd), P_PAUSED);
 	}
 }
@@ -204,13 +211,14 @@ void quit_callback(struct player *this)
 	char **now_next = m_list("n", NULL);
 	if (now_next == NULL)
 		return;
+	if (now_next[0] != NULL)
+		LOG(0, "quit_callback: start %s\n", now_next[0]);
 	if (now_next[0] != NULL && !now_started) {
-		LOG(1, "Callback starting %s\n", now_next[0]);
 		now = player_new(now_next[0], get_output("n"), P_PLAYING);
 	}
 	if (now_next[1] != NULL) {
 		sleep(2);
-		LOG(1, "Callback priming %s\n", now_next[1]);
+		LOG(1, "quit_callback: prime %s\n", now_next[1]);
 		next = player_new(now_next[1], get_output("n"), P_PAUSED);
 	}
 }
