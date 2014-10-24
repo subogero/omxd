@@ -50,6 +50,7 @@ struct player *player_new(char *file, char *out, enum pstate state)
 			write(this->wpipe, "p", 1);
 		this->state = state;
 		signal(SIGCHLD, player_quit);
+		signal(SIGPIPE, player_quit);
 		strcpy(this->file, file);
 		LOG(0, "player_new: PID=%d %s\n", this->pid, file);
 		return this;
@@ -101,6 +102,8 @@ void player_off(struct player *this)
 
 static void player_quit(int signum)
 {
+	if (signum == SIGPIPE)
+		return;
 	int status;
 	pid_t pid = wait(&status);
 	struct player *this = find_pid(pid);
