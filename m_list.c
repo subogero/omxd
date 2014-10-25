@@ -238,7 +238,8 @@ int new_dir(char *last, char *this)
 
 int wrapped(int i)
 {
-	return i < 0 ? list.size + i : i % list.size;
+	i %= list.size;
+	return i < 0 ? list.size + i : i;
 }
 
 int to_num(char *file)
