@@ -21,19 +21,21 @@ install:
 	cp logrotate /etc/logrotate.d/omxd
 	cp omxd.1 /usr/share/man/man1/
 	cp rpyt.1 /usr/share/man/man1/
-uninstall:
-	-killall omxd
+uninstall: stop
 	rm /usr/bin/omxd
 	rm /usr/bin/rpyt
 	perl -ne 'print unless /omxd/' -i /etc/rc.local
 	rm /etc/logrotate.d/omxd
 	rm /usr/share/man/man1/omxd.1 
 	rm /usr/share/man/man1/rpyt.1 
-m_list: test_m_list.c m_list.c utils.c m_list.h
-	gcc -g -o m_list test_m_list.c m_list.c utils.c
-debug: omxd
+stop:
 	-killall omxd
 	-killall omxplayer.bin
+clean: stop
+	-rm omxd m_list omxplay omxlog omxctl omxd_help.h omxd.pid st
+m_list: test_m_list.c m_list.c utils.c m_list.h
+	gcc -g -o m_list test_m_list.c m_list.c utils.c
+debug: omxd stop
 	strace -p `./omxd -d | sed 's/.*PID //'` -o st &
 ps:
 	pstree -pu | grep omx
