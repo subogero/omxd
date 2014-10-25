@@ -170,16 +170,20 @@ static void player(char *cmd, char **files)
 	}
 	if (files == NULL)
 		return;
-	if (files[0] != NULL && *files[0] != 0) {
+	/* Now/next: NULL = leave player alone; "" = destroy player */
+	if (files[0] != NULL) {
 		stop_playback(now);
-		LOG(0, "player: start %s\n", files[0]);
-		now = player_new(files[0], get_output(cmd), P_PLAYING);
+		if (*files[0] != 0) {
+			LOG(0, "player: start %s\n", files[0]);
+			now = player_new(files[0], get_output(cmd), P_PLAYING);
+		}
 	}
-	if (files[1] != NULL && *files[1] != 0) {
-		sleep(2);
+	if (files[1] != NULL) {
 		stop_playback(next);
-		LOG(1, "player: prime %s\n", files[1]);
-		next = player_new(files[1], get_output(cmd), P_PAUSED);
+		if (*files[1] != 0) {
+			LOG(1, "player: prime %s\n", files[1]);
+			next = player_new(files[1], get_output(cmd), P_PAUSED);
+		}
 	}
 }
 

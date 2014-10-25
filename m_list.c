@@ -12,6 +12,7 @@ static struct playlist { int i; int size; char **arr_sz; }
 static char *now_next[2];
 static char next_file[LINE_LENGTH];
 static char inserted_next_file = 0;
+static char unsorted = 0;
 
 enum list_pos { L_START, L_ACT, L_END, L_ALL };
 enum e_dirs { D_1ST, D_PREV, D_ACT, D_NEXT, D_LAST, D_NUMOF };
@@ -31,7 +32,15 @@ int new_dir(char *last, char *this);
 
 int wrapped(int i);
 int to_num(char *file);
+int di_random(void);
 
+/*
+ * Return a 2-element string array for tracks to play now and next:
+ * - NULL: leave running players alone
+ * - element NULL: leave that player alone
+ * - element empty string: destroy that player
+ * - element is file: start new player
+ */
 char **m_list(char *cmd, char *file)
 {
 	if (list.i == -1)
@@ -61,23 +70,29 @@ char **m_list(char *cmd, char *file)
 		delete(L_ALL, 0);
 		return NULL;
 	}
+	if (*cmd == 'u')
+		unsorted = !unsorted;
 	int n = to_num(file);
+	int di = unsorted ? di_random() : 1;
 	int change =
 		  *cmd == 'i' ? insert(L_ACT, 0, file)
 		: *cmd == 'a' ? insert(L_ACT, 1, file)
 		: *cmd == 'A' ? insert(L_END, 0, file)
 		: *cmd == 'x' ? (n < 0 ? delete(L_ACT, 0) : delete(L_START, n))
-		: *cmd == 'n' ? jump(L_ACT,  1)
-		: *cmd == 'N' ? jump(L_ACT, -1)
+		: *cmd == 'n' ? jump(L_ACT,  di)
+		: *cmd == 'N' ? jump(L_ACT, -di)
 		: *cmd == 'd' ? jump(L_START, dirs[D_NEXT])
 		: *cmd == 'D' ? jump(L_START, dirs[D_PREV])
 		: *cmd == 'g' ? jump(L_START, atoi(file))
+		: *cmd == 'u' ? 0
 		:               0;
 	LOG(1, "m_list Change=%d size=%d i=%d\n", change, list.size, list.i);
 	if (change && list.size > 0) {
 		int i_next = (list.i + 1) % list.size;
 		now_next[0] = (change & 1) ? list.arr_sz[list.i] : NULL;
 		now_next[1] = (change & 2) ? list.arr_sz[i_next] : NULL;
+		if (unsorted)
+			now_next[1] = "";
 		return now_next;
 	}
 	return NULL;
@@ -245,4 +260,19 @@ int wrapped(int i)
 int to_num(char *file)
 {
 	return file == NULL || *file < '0' || *file > '9' ? -1 : atoi(file);
+}
+
+int di_random(void)
+{
+	int random = 1;
+	int rfd = open("/dev/urandom", O_RDONLY);
+	if (rfd >= 0) {
+		read(rfd, &random, sizeof random);
+		close(rfd);
+	}
+	LOG(1, "di_random: %d\n", random);
+	/* Never jump zero when playback unsorted */
+	if (random % list.size == 0)
+		random += list.size / 2;
+	return random;
 }
