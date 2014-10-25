@@ -40,6 +40,11 @@ int client(int argc, char *argv[])
 	line[0] = *cmd;
 	line[1] = ' ';
 	line[2] = 0;
+	/* Direct jump/delete */
+	if (strchr("gx", *cmd)) {
+		strcat(line, file);
+		return writecmd(line);
+	}
 	/* URL? */
 	char *url = is_url(file);
 	if (url != NULL) {

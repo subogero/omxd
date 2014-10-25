@@ -30,6 +30,7 @@ static void update_dirs(void);
 int new_dir(char *last, char *this);
 
 int wrapped(int i);
+int to_num(char *file);
 
 char **m_list(char *cmd, char *file)
 {
@@ -60,15 +61,17 @@ char **m_list(char *cmd, char *file)
 		delete(L_ALL, 0);
 		return NULL;
 	}
+	int n = to_num(file);
 	int change =
 		  *cmd == 'i' ? insert(L_ACT, 0, file)
 		: *cmd == 'a' ? insert(L_ACT, 1, file)
 		: *cmd == 'A' ? insert(L_END, 0, file)
-		: *cmd == 'x' ? delete(L_ACT, 0)
+		: *cmd == 'x' ? (n < 0 ? delete(L_ACT, 0) : delete(L_START, n))
 		: *cmd == 'n' ? jump(L_ACT,  1)
 		: *cmd == 'N' ? jump(L_ACT, -1)
 		: *cmd == 'd' ? jump(L_START, dirs[D_NEXT])
 		: *cmd == 'D' ? jump(L_START, dirs[D_PREV])
+		: *cmd == 'g' ? jump(L_START, atoi(file))
 		:               0;
 	LOG(1, "m_list Change=%d size=%d i=%d\n", change, list.size, list.i);
 	if (change && list.size > 0) {
@@ -236,4 +239,9 @@ int new_dir(char *last, char *this)
 int wrapped(int i)
 {
 	return i < 0 ? list.size + i : i % list.size;
+}
+
+int to_num(char *file)
+{
+	return file == NULL || *file < '0' || *file > '9' ? -1 : atoi(file);
 }

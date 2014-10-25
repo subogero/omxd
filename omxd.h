@@ -5,7 +5,7 @@
 #define LINE_MAX (LINE_LENGTH - 1)
 
 #define OMX_CMDS "frFRpkoms-+"
-#define LIST_CMDS "iaAIHJL.hjnNdDxX"
+#define LIST_CMDS "iaAIHJL.hjnNdDxXg"
 #define STOP_CMDS "P"
 #define CLIENT_CMDS "S"
 
