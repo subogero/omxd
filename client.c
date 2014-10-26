@@ -11,12 +11,13 @@
 #include <stdio.h>
 #include "omxd.h"
 
-static int client_cmd(char *cmd);
+static int client_cmd(char *cmd, char *file);
 static char *player_start(char *line, int *t);
 static char *player_length(char *line, int *t);
 static int player_pause(char *line, int *t);
 static int player_fFrR(char *line, int *t);
 static int player_stop(char *line);
+static void print_list(char *playing);
 static char *is_url(char *file);
 static int cmd_foreach_in(char *cmd);
 static int writecmd(char *cmd);
@@ -31,7 +32,7 @@ int client(int argc, char *argv[])
 	signal(SIGALRM, open_tout_handler);
 	/* Check command */
 	if (strchr(CLIENT_CMDS, *cmd) != NULL)
-		return client_cmd(cmd);
+		return client_cmd(cmd, file);
 	if (strchr(OMX_CMDS LIST_CMDS STOP_CMDS, *cmd) == NULL)
 		return 11;
 	if (file == NULL)
@@ -70,7 +71,7 @@ int client(int argc, char *argv[])
 	}
 }
 
-static int client_cmd(char *cmd)
+static int client_cmd(char *cmd, char *file)
 {
 	if (*cmd != 'S')
 		return 15;
@@ -82,8 +83,8 @@ static int client_cmd(char *cmd)
 	}
 	char line[LINE_LENGTH];
 	char playing[LINE_LENGTH];
-	int t, t_play, t_start, t_len, t_len_tmp;
 	*playing = 0;
+	int t, t_play, t_start, t_len, t_len_tmp;
 	int paused = 0;
 	int unsorted = 0;
 	char *duration_of = NULL;
@@ -135,6 +136,8 @@ static int client_cmd(char *cmd)
 	         : unsorted      ? "Shuffle"
 	         :                 "Playing";
 	printfd(1, "%s %d/%d %s\n", st, t_play, t_len, playing);
+	if (file != NULL && strncmp(file, "all", 4) == 0)
+		print_list(playing);
 	return 0;
 }
 
@@ -149,6 +152,12 @@ static char *player_start(char *line, int *t)
 	return strtok(track, "\n");
 }
 
+/*
+ * Upon finding a "Duration:" line:
+ * - return log line from omxplayer that identifies track
+ * - write track duration [s] into t
+ * Otherwise return NULL and don't touch t
+ */
 static char *player_length(char *line, int *t)
 {
 	static char omxinput[LINE_LENGTH] = { 0, };
@@ -197,6 +206,20 @@ static int player_fFrR(char *line, int *t)
 static int player_stop(char *line)
 {
 	return strstr(line, "player: stop all") != NULL;
+}
+
+static void print_list(char *playing)
+{
+	FILE *play = fopen(LIST_FILE, "r");
+	if (play == NULL)
+		return;
+	char line[LINE_LENGTH];
+	while (fgets(line, LINE_LENGTH, play)) {
+		if (strstr(line, playing) == line)
+			printf("> ");
+		printf(line);
+	}
+	fclose(play);
 }
 
 /* Other helpers */
