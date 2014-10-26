@@ -85,6 +85,7 @@ static int client_cmd(char *cmd)
 	int t, t_play, t_start, t_len, t_len_tmp;
 	*playing = 0;
 	int paused = 0;
+	int unsorted = 0;
 	char *duration_of = NULL;
 	while (fgets(line, LINE_LENGTH, logfile)) {
 		char *start = player_start(line, &t);
@@ -124,10 +125,15 @@ static int client_cmd(char *cmd)
 			t_len = 0;
 			t_play = 0;
 		}
+		if (strstr(line, "m_list: unsorted") != NULL)
+			unsorted = (strstr(line, " on") != NULL);
 	}
 	if (*playing != 0 && !paused)
 		t_play += time(NULL) - t_start;
-	char *st = *playing == 0 ? "Stopped" : paused ? "Paused" : "Playing";
+	char *st = *playing == 0 ? "Stopped"
+	         : paused        ? "Paused"
+	         : unsorted      ? "Shuffle"
+	         :                 "Playing";
 	printfd(1, "%s %d/%d %s\n", st, t_play, t_len, playing);
 	return 0;
 }

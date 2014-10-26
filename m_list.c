@@ -70,8 +70,10 @@ char **m_list(char *cmd, char *file)
 		delete(L_ALL, 0);
 		return NULL;
 	}
-	if (*cmd == 'u')
+	if (*cmd == 'u') {
 		unsorted = !unsorted;
+		LOG(0, "m_list: unsorted %s\n", unsorted ? "on" : "off");
+	}
 	int n = to_num(file);
 	int di = unsorted ? di_random() : 1;
 	int change =
