@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include "omxd.h"
-#include "m_list.h"
 
 static void print_now_next(char **now_next)
 {

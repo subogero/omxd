@@ -33,7 +33,7 @@ stop:
 	-killall omxplayer.bin
 clean: stop
 	-rm omxd m_list omxplay omxlog omxctl omxd_help.h omxd.pid st
-m_list: test_m_list.c m_list.c utils.c m_list.h
+m_list: test_m_list.c m_list.c utils.c omxd.h
 	gcc -g -o m_list test_m_list.c m_list.c utils.c
 debug: omxd stop
 	strace -p `./omxd -d | sed 's/.*PID //'` -o st &

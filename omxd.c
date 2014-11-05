@@ -5,7 +5,6 @@
 #include <sys/types.h>
 #include <string.h>
 #include "omxd.h"
-#include "m_list.h"
 
 struct player *now = NULL;
 struct player *next = NULL;

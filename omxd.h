@@ -47,8 +47,8 @@ extern int I_root;
 #define LOG_FILE  (I_root ? "/var/log/omxlog"    : "omxlog")
 #define PID_FILE  (I_root ? "/var/run/omxd.pid"  : "omxd.pid")
 
-/* From playlist.c */
-char *playlist(char *cmd, char *file);
+/* From m_list.c */
+char **m_list(char *cmd, char *file);
 
 /* From client.c */
 #include <sys/stat.h>
