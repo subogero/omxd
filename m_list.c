@@ -88,6 +88,8 @@ char **m_list(char *cmd, char *file)
 		: *cmd == 'g' ? jump(L_START, atoi(file))
 		: *cmd == 'u' ? 0
 		:               0;
+	if (list.size <= 1)
+		change &= ~2;
 	LOG(1, "m_list Change=%d size=%d i=%d\n", change, list.size, list.i);
 	if (change && list.size > 0) {
 		int i_next = (list.i + 1) % list.size;
