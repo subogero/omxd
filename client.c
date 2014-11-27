@@ -131,6 +131,8 @@ static int client_cmd(char *cmd, char *file)
 	}
 	if (*playing != 0 && !paused)
 		t_play += time(NULL) - t_start;
+	if (*playing == 0)
+		t_play = t_len = 0;
 	char *st = *playing == 0 ? "Stopped"
 	         : paused        ? "Paused"
 	         : unsorted      ? "Shuffle"
@@ -211,11 +213,15 @@ static int player_stop(char *line)
 static void print_list(char *playing)
 {
 	FILE *play = fopen(LIST_FILE, "r");
-	if (play == NULL)
-		return;
+	if (play == NULL) {
+		int I_root = 1;
+		play = fopen(LIST_FILE, "r");
+		if (play == NULL)
+			return;
+	}
 	char line[LINE_LENGTH];
 	while (fgets(line, LINE_LENGTH, play)) {
-		if (strstr(line, playing) == line)
+		if (*playing != 0 && strstr(line, playing) == line)
 			printf("> ");
 		printf(line);
 	}
