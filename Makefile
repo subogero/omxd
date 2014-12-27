@@ -11,25 +11,25 @@ rpyt.1: README Makefile
 	curl -F page=@README.rpyt http://mantastic.herokuapp.com > rpyt.1
 	rm README.rpyt
 install: stop
-	cp omxd /usr/bin
+	cp omxd $(DESTDIR)/usr/bin
 	IFS=''; while read i; do [ "$$i" = HELP ] && sed -n '/rpyt/,$$p' README; echo "$$i"; done <rpyt >/usr/bin/rpyt
-	chmod +x /usr/bin/rpyt
-	cp logrotate /etc/logrotate.d/omxd
-	cp omxd.1 /usr/share/man/man1/
-	cp rpyt.1 /usr/share/man/man1/
-	perl -ne 'print unless /omxd/' -i /etc/rc.local # Auto migrate from rc.local
-	cp init /etc/init.d/omxd
+	chmod +x $(DESTDIR)/usr/bin/rpyt
+	cp logrotate $(DESTDIR)/etc/logrotate.d/omxd
+	cp omxd.1 $(DESTDIR)/usr/share/man/man1/
+	cp rpyt.1 $(DESTDIR)/usr/share/man/man1/
+	perl -ne 'print unless /omxd/' -i $(DESTDIR)/etc/rc.local # Auto migrate from rc.local
+	cp init $(DESTDIR)/etc/init.d/omxd
 	update-rc.d omxd defaults
 	service omxd start
 uninstall: stop
-	perl -ne 'print unless /omxd/' -i /etc/rc.local # Auto migrate from rc.local
-	rm /etc/init.d/omxd
+	perl -ne 'print unless /omxd/' -i $(DESTDIR)/etc/rc.local # Auto migrate from rc.local
+	rm $(DESTDIR)/etc/init.d/omxd
 	update-rc.d omxd remove
-	rm /usr/bin/omxd
-	rm /usr/bin/rpyt
-	rm /etc/logrotate.d/omxd
-	rm /usr/share/man/man1/omxd.1
-	rm /usr/share/man/man1/rpyt.1
+	rm $(DESTDIR)/usr/bin/omxd
+	rm $(DESTDIR)/usr/bin/rpyt
+	rm $(DESTDIR)/etc/logrotate.d/omxd
+	rm $(DESTDIR)/usr/share/man/man1/omxd.1
+	rm $(DESTDIR)/usr/share/man/man1/rpyt.1
 stop:
 	-service omxd stop
 	-killall omxd
