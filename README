@@ -3,7 +3,9 @@ omxd(1) --  daemon to maintain a playlist and play it via omxplayer
 
 ## SYNOPSIS
 
+ service omxd start|stop|restart
  omxd [-d]
+
  echo <command> [abs-path] > /var/run/omxctl
  omxd <command> [rel-path]
 
@@ -11,7 +13,7 @@ omxd(1) --  daemon to maintain a playlist and play it via omxplayer
 
 The omxd daemon plays your playlist even if you've disconnected from your
 Raspberry Pi, to allow the easy implementation of various media centre apps.
-Typically, start omxd from the /etc/rc.local stript at boot time.
+After install, omxd is started automatically at boot.
 
 ## OPTIONS
 
@@ -82,6 +84,7 @@ to allow easier testing.
      /var/local/omxplay	playlist file, actual item indicated by >
      /var/log/omxlog	log file
      /etc/omxd.conf	defines user to run omxplayer: user=foo
+     /etc/init.d/omxd	init script
 .
 rpyt(1) -- Raspberry Pi YouTube
 ===============================
