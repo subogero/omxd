@@ -1,0 +1,53 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          omxd
+# Required-Start:    $local_fs
+# Required-Stop:     $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Description:       Raspberry Pi omxplayer playlist daemon and YouTube player
+### END INIT INFO
+
+omxd_pid() {
+  ps -C omxd -o pid=,ppid= | while read PID PPID; do
+    [ "$PPID" = 1 ] && echo $PID && break
+  done
+}
+
+start() {
+  if [ `omxd_pid` ]; then
+    echo '[info] Service omxd already running' >&2
+    return 1
+  fi
+  echo -n '[....] Starting omxd playlist daemon... ' >&2
+  omxd >/dev/null 2>&1
+  echo "done.\r[ ok ]" >&2
+}
+
+stop() {
+  PID=`omxd_pid`
+  if [ -z "$PID" ]; then
+    echo '[info] Service omxd not running' >&2
+    return 1
+  fi
+  echo -n '[....] Stopping omxd playlist daemon... ' >&2
+  kill $PID >/dev/null 2>&1
+  killall omxplayer.bin >/dev/null 2>&1
+  rm /var/run/omxctl /var/log/omxlog >/dev/null 2>&1
+  echo "done.\r[ ok ]" >&2
+}
+
+case "$1" in
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  restart)
+    stop
+    start
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart}"
+esac

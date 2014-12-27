@@ -10,25 +10,28 @@ rpyt.1: README Makefile
 	sed -n '/rpyt/,$$p' README >README.rpyt
 	curl -F page=@README.rpyt http://mantastic.herokuapp.com > rpyt.1
 	rm README.rpyt
-install:
-	-killall omxd
-	-killall omxplayer.bin
+install: stop
 	cp omxd /usr/bin
 	IFS=''; while read i; do [ "$$i" = HELP ] && sed -n '/rpyt/,$$p' README; echo "$$i"; done <rpyt >/usr/bin/rpyt
 	chmod +x /usr/bin/rpyt
-	omxd
-	perl -pe '$$o=1 if /omxd/; print "omxd\n" if !$$o && /^exit 0/' -i /etc/rc.local
 	cp logrotate /etc/logrotate.d/omxd
 	cp omxd.1 /usr/share/man/man1/
 	cp rpyt.1 /usr/share/man/man1/
+	perl -ne 'print unless /omxd/' -i /etc/rc.local # Auto migrate from rc.local
+	cp init /etc/init.d/omxd
+	update-rc.d omxd defaults
+	service omxd start
 uninstall: stop
+	perl -ne 'print unless /omxd/' -i /etc/rc.local # Auto migrate from rc.local
+	rm /etc/init.d/omxd
+	update-rc.d omxd remove
 	rm /usr/bin/omxd
 	rm /usr/bin/rpyt
-	perl -ne 'print unless /omxd/' -i /etc/rc.local
 	rm /etc/logrotate.d/omxd
-	rm /usr/share/man/man1/omxd.1 
-	rm /usr/share/man/man1/rpyt.1 
+	rm /usr/share/man/man1/omxd.1
+	rm /usr/share/man/man1/rpyt.1
 stop:
+	-service omxd stop
 	-killall omxd
 	-killall omxplayer.bin
 clean: stop
