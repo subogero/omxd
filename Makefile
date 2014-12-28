@@ -29,18 +29,17 @@ install:
 	cp rpyt.1 $(DESTDIR)/usr/share/man/man1/
 	-perl -ne 'print unless /omxd/' -i $(DESTDIR)/etc/rc.local # Auto migrate from rc.local
 	cp init $(DESTDIR)/etc/init.d/omxd
-	-update-rc.d omxd defaults
-	-service omxd start
+	-./postinst
 uninstall: stop
 	-perl -ne 'print unless /omxd/' -i $(DESTDIR)/etc/rc.local # Auto migrate from rc.local
 	rm $(DESTDIR)/etc/init.d/omxd
-	update-rc.d omxd remove
 	rm $(DESTDIR)/usr/bin/omxd
 	rm $(DESTDIR)/usr/bin/rpyt
 	rm $(DESTDIR)/etc/logrotate.d/omxd
 	rm $(DESTDIR)/usr/share/man/man1/omxd.1
 	rm $(DESTDIR)/usr/share/man/man1/rpyt.1
 stop:
+	-./postrm
 	-service omxd stop
 	-killall omxd
 	-killall omxplayer.bin
@@ -111,7 +110,6 @@ debs:
 	| sed -r 's/^omxd \((.+)\)$$/omxd (\1-1) UNRELEASED; urgency=low/' \
 	| sed -r 's/^(.{,79}).*/\1/' \
 	> $(DEB)/changelog
-	$(EDITOR) $(DEB)/changelog
 	echo '#!/usr/bin/make -f' > $(DEB)/rules
 	echo '%:'                >> $(DEB)/rules
 	echo '	dh $$@'          >> $(DEB)/rules
@@ -122,6 +120,7 @@ debs:
 	chmod 755 $(DEB)/rules
 	mkdir -p $(DEB)/source
 	echo '3.0 (quilt)' > $(DEB)/source/format
+	cp postinst postrm $(DEB)
 	@cd $(REL)/omxd-$(TAG) && \
 	echo && echo List of PGP keys for signing package: && \
 	gpg -K | grep uid && \
