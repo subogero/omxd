@@ -1,2 +1,2 @@
 #!/bin/sh
-service omxd stop
+service omxd stop || true

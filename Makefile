@@ -76,9 +76,11 @@ tag:
 	  echo '  * Initial release' >> changelog; \
 	fi; \
 	echo " -- `git config user.name` <`git config user.email`>  `date -R`" >> changelog; \
-	$$EDITOR changelog; \
 	git tag -a -F changelog $$TAG HEAD; \
 	rm changelog
+utag:
+	TAG=`git log --oneline --decorate | head -n1 | sed -rn 's/^.+ version (.+)/\1/p'`; \
+	[ "$$TAG" ] && git tag -d $$TAG && git reset --hard HEAD^
 tarball: clean
 	export TAG=`sed -rn 's/^omxd (.+)$$/\1/p' version.txt`; \
 	$(MAKE) balls
