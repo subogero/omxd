@@ -1,4 +1,4 @@
-omxd 0.2
+omxd 1.0
 
 Free software, distributed under the GNU GPL v2 license
 Copyright 2013-2014 SZABO Gergely <szg@subogero.com>
