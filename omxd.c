@@ -25,6 +25,13 @@ int main(int argc, char *argv[])
 		);
 		return 0;
 	}
+	/* Version for --version */
+	if (argc == 2 && strncmp(argv[1], "--version", 10) == 0) {
+		writestr(1,
+#include "version.h"
+		);
+		return 0;
+	}
 	/* Client when called with options */
 	if (argc > 1) {
 		if (strncmp(argv[1], "-d", 3) == 0)
