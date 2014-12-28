@@ -21,6 +21,7 @@ rpyt.1: README Makefile
 	curl -F page=@README.rpyt http://mantastic.herokuapp.com > rpyt.1
 	rm README.rpyt
 install:
+	-./preinst
 	cp omxd $(DESTDIR)/usr/bin
 	IFS=''; while read i; do [ "$$i" = HELP ] && sed -n '/rpyt/,$$p' README; echo "$$i"; done <rpyt >$(DESTDIR)/usr/bin/rpyt
 	chmod +x $(DESTDIR)/usr/bin/rpyt
@@ -30,7 +31,8 @@ install:
 	-perl -ne 'print unless /omxd/' -i $(DESTDIR)/etc/rc.local # Auto migrate from rc.local
 	cp init $(DESTDIR)/etc/init.d/omxd
 	-./postinst
-uninstall: stop
+uninstall:
+	-./prerm
 	-perl -ne 'print unless /omxd/' -i $(DESTDIR)/etc/rc.local # Auto migrate from rc.local
 	rm $(DESTDIR)/etc/init.d/omxd
 	rm $(DESTDIR)/usr/bin/omxd
@@ -38,8 +40,8 @@ uninstall: stop
 	rm $(DESTDIR)/etc/logrotate.d/omxd
 	rm $(DESTDIR)/usr/share/man/man1/omxd.1
 	rm $(DESTDIR)/usr/share/man/man1/rpyt.1
-stop:
 	-./postrm
+stop:
 	-service omxd stop
 	-killall omxd
 	-killall omxplayer.bin
@@ -122,7 +124,7 @@ debs:
 	chmod 755 $(DEB)/rules
 	mkdir -p $(DEB)/source
 	echo '3.0 (quilt)' > $(DEB)/source/format
-	cp postinst postrm $(DEB)
+	cp preinst postinst prerm postrm $(DEB)
 	@cd $(REL)/omxd-$(TAG) && \
 	echo && echo List of PGP keys for signing package: && \
 	gpg -K | grep uid && \
