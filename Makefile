@@ -25,24 +25,26 @@ install:
 	cp omxd $(DESTDIR)/usr/bin
 	IFS=''; while read i; do [ "$$i" = HELP ] && sed -n '/rpyt/,$$p' README; echo "$$i"; done <rpyt >$(DESTDIR)/usr/bin/rpyt
 	chmod +x $(DESTDIR)/usr/bin/rpyt
-	cp logrotate $(DESTDIR)/etc/logrotate.d/omxd
 	cp omxd.1 $(DESTDIR)/usr/share/man/man1/
 	cp rpyt.1 $(DESTDIR)/usr/share/man/man1/
+	cp init      $(DESTDIR)/usr/share/doc/omxd/
+	cp logrotate $(DESTDIR)/usr/share/doc/omxd/
 	-perl -ne 'print unless /omxd/' -i $(DESTDIR)/etc/rc.local # Auto migrate from rc.local
-	cp init $(DESTDIR)/etc/init.d/omxd
-	-./postinst
 uninstall:
 	-./prerm
 	-perl -ne 'print unless /omxd/' -i $(DESTDIR)/etc/rc.local # Auto migrate from rc.local
-	rm $(DESTDIR)/etc/init.d/omxd
 	rm $(DESTDIR)/usr/bin/omxd
 	rm $(DESTDIR)/usr/bin/rpyt
-	rm $(DESTDIR)/etc/logrotate.d/omxd
 	rm $(DESTDIR)/usr/share/man/man1/omxd.1
 	rm $(DESTDIR)/usr/share/man/man1/rpyt.1
+	rm $(DESTDIR)/usr/share/doc/omxd/init
+	rm $(DESTDIR)/usr/share/doc/omxd/logrotate
 	-./postrm
+start:
+	-./postinst
 stop:
-	-service omxd stop
+	-./prerm
+	-./postrm
 	-killall omxd
 	-killall omxplayer.bin
 clean:
@@ -121,8 +123,7 @@ debs:
 	echo '	dh $$@'          >> $(DEB)/rules
 	echo usr/bin             > $(DEB)/omxd.dirs
 	echo usr/share/man/man1 >> $(DEB)/omxd.dirs
-	echo etc/logrotate.d    >> $(DEB)/omxd.dirs
-	echo etc/init.d         >> $(DEB)/omxd.dirs
+	echo usr/share/doc/omxd >> $(DEB)/omxd.dirs
 	chmod 755 $(DEB)/rules
 	mkdir -p $(DEB)/source
 	echo '3.0 (quilt)' > $(DEB)/source/format
@@ -136,6 +137,5 @@ debs:
 	else \
 	  dpkg-buildpackage -us -uc; \
 	fi
-	lintian $(REL)/*.deb
 	fakeroot alien -kr $(REL)/*.deb; mv *.rpm $(REL)
 release: tag deb

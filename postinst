@@ -1,3 +1,6 @@
 #!/bin/sh
+cp /usr/share/doc/omxd/init /etc/init.d/omxd
+chmod +x /etc/init.d/omxd
+cp /usr/share/doc/omxd/logrotate /etc/logrotate.d/omxd
 update-rc.d omxd defaults
 service omxd start

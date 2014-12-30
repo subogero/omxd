@@ -1,2 +1,4 @@
 #!/bin/sh
 update-rc.d omxd remove
+rm /etc/init.d/omxd
+rm /etc/logrotate.d/omxd
