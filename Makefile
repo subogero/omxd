@@ -137,5 +137,5 @@ debs:
 	else \
 	  dpkg-buildpackage -us -uc; \
 	fi
-	fakeroot alien -kr $(REL)/*.deb; mv *.rpm $(REL)
+	fakeroot alien -kr --scripts $(REL)/*.deb; mv *.rpm $(REL)
 release: tag deb
