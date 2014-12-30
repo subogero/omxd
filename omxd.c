@@ -16,6 +16,10 @@ static void player(char *cmd, char **files);
 static void stop_playback(struct player *this);
 static char *get_output(char *cmd);
 
+static volatile char spinlock;
+#define SPINLOCK_TAKE while (spinlock) { usleep(1000); } spinlock = 1;
+#define SPINLOCK_RELEASE spinlock = 0;
+
 int main(int argc, char *argv[])
 {
 	/* Help for -h */
@@ -160,11 +164,12 @@ static int parse(char *line)
 /* Control the actual omxplayer */
 static void player(char *cmd, char **files)
 {
+	SPINLOCK_TAKE
 	if (strchr(STOP_CMDS, *cmd) != NULL) {
 		LOG(0, "player: stop all\n");
 		stop_playback(now);
 		stop_playback(next);
-		return;
+		goto player_end;
 	}
 	if (strchr(OMX_CMDS, *cmd) != NULL && now != NULL ) {
 		if (*cmd == 'p')
@@ -172,10 +177,10 @@ static void player(char *cmd, char **files)
 		else
 			LOG(0, "player: send %s\n", cmd)
 		player_cmd(now, cmd);
-		return;
+		goto player_end;
 	}
 	if (files == NULL)
-		return;
+		goto player_end;
 	/* Now/next: NULL = leave player alone; "" = destroy player */
 	if (files[0] != NULL) {
 		stop_playback(now);
@@ -191,6 +196,8 @@ static void player(char *cmd, char **files)
 			next = player_new(files[1], get_output(cmd), P_PAUSED);
 		}
 	}
+player_end:
+	SPINLOCK_RELEASE
 }
 
 /* Stop the playback immediately */
@@ -205,12 +212,13 @@ static void stop_playback(struct player *this)
 /* Signal handler for SIGCHLD when player exits */
 void quit_callback(struct player *this)
 {
+	SPINLOCK_TAKE
 	if (this == next) {
 		next = NULL;
-		return;
+		goto quit_callback_end;
 	}
 	if (this != now)
-		return;
+		goto quit_callback_end;
 	int now_started = 0;
 	if (next != NULL) {
 		now = next;
@@ -220,7 +228,7 @@ void quit_callback(struct player *this)
 	}
 	char **now_next = m_list("n", NULL);
 	if (now_next == NULL)
-		return;
+		goto quit_callback_end;
 	if (now_next[0] != NULL)
 		LOG(0, "quit_callback: start %s\n", now_next[0]);
 	if (now_next[0] != NULL && !now_started) {
@@ -231,6 +239,8 @@ void quit_callback(struct player *this)
 		LOG(1, "quit_callback: prime %s\n", now_next[1]);
 		next = player_new(now_next[1], get_output("n"), P_PAUSED);
 	}
+quit_callback_end:
+	SPINLOCK_RELEASE
 }
 
 /* Return omxplayer argument to set output interface (Jack/HDMI) */
