@@ -22,32 +22,59 @@ static volatile char spinlock;
 
 int main(int argc, char *argv[])
 {
-	/* Help for -h */
-	if (argc == 2 && strncmp(argv[1], "-h", 3) == 0) {
-		writestr(1,
-#include "omxd_help.h"
-		);
-		return 0;
-	}
-	/* Version for --version */
-	if (argc == 2 && strncmp(argv[1], "--version", 10) == 0) {
-		writestr(1,
+	I_root = geteuid() == 0;
+	logfd = STDERR_FILENO;
+
+	int should_daemonize = 1;
+	int opt_count = 0;
+	int i;
+	for(i = 1; i < argc; i++) {
+		if(strncmp(argv[i], "--version", 9) == 0) {
+			writestr(1,
 #include "version.h"
-		);
-		return 0;
-	}
-	/* Client when called with options */
-	if (argc > 1) {
-		if (strncmp(argv[1], "-d", 3) == 0)
+					);
+			return 0;
+		} else if(strncmp(argv[i], "-h", 2) == 0) {
+			writestr(1,
+#include "omxd_help.h"
+					);
+			return 0;
+		} else if(strncmp(argv[i], "-n", 2) == 0) {
+			should_daemonize = 0;
+			opt_count++;
+		} else if(strncmp(argv[i], "-d", 2) == 0) {
 			loglevel = 1;
-		else
-			return client(argc, argv);
+			opt_count++;
+		} else if(strncmp(argv[i], "--", 2) == 0) {
+			break;
+		}
 	}
-	int daemon_error = daemonize();
-	if (daemon_error > 0)
-		return daemon_error;
-	else if (daemon_error < 0)
-		return 0;
+
+	/* Client when called with arguments. */
+	if (opt_count + 1 < argc)
+		return client(argc, argv);
+
+	/* Run in /var/run if invoked as root, or allow testing in CWD */
+	if (I_root && chdir("/var/run/") < 0)
+		return 3;
+
+	if (should_daemonize) {
+		int daemon_error = daemonize();
+		if (daemon_error > 0)
+			return daemon_error;
+		else if (daemon_error < 0)
+			return 0;
+	}
+
+	/* Create and open FIFO for command input as stdin */
+	unlink("omxctl");
+	LOG(1, "main: Deleted original omxctl FIFO.\n");
+	const mode_t old_mask = umask(0);
+	if (mknod("omxctl", S_IFIFO | 0622, 0) < 0)
+		return 6;
+	umask(old_mask);
+	LOG(1, "main: Created new omxctl FIFO.\n");
+
 	/* Main loop */
 	while (1) {
 		char line[LINE_LENGTH];
@@ -58,10 +85,9 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-/* Fork, umask, SID, chdir, close, logfile, FIFO */
+/* Fork, umask, SID, close, logfile. */
 static int daemonize(void)
 {
-	I_root = geteuid() == 0;
 	/* Fork the real daemon */
 	pid_t pid = fork();
 	if (pid < 0)
@@ -74,28 +100,21 @@ static int daemonize(void)
 		printfd(1, "omxd daemon started, PID %d\n", pid);
 		return -1;
 	}
+
 	/* umask and session ID */
 	umask(0);
 	pid_t sid = setsid();
 	if (sid < 0)
 		return 2;
-	/* Run in /var/run if invoked as root, or allow testing in CWD */
-	if (I_root && chdir("/var/run/") < 0)
-		return 3;
+
 	/* Create log file as stdout and stderr */
-	close(2);
+	close(STDERR_FILENO);
 	logfd = creat(LOG_FILE, 0644);
-	close(0);
-	close(1);
+	close(STDIN_FILENO);
+	close(STDOUT_FILENO);
 	if (logfd < 0)
 		return 4;
 	LOG(0, "daemonize: omxd started, SID %d\n", sid);
-	/* Create and open FIFO for command input as stdin */
-	unlink("omxctl");
-	LOG(1, "daemonize: Deleted original omxctl FIFO\n");
-	if (mknod("omxctl", S_IFIFO | 0622, 0) < 0)
-		return 6;
-	LOG(1, "daemonize: Created new omxctl FIFO\n");
 	return 0;
 }
 
