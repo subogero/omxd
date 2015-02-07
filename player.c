@@ -30,12 +30,13 @@ struct player *player_new(char *file, char *out, enum pstate state)
 		return NULL;
 	int ctrlpipe[2];
 	pipe(ctrlpipe);
-	char *argv[5];
+	char *argv[6];
 	argv[0] = "/usr/bin/omxplayer";
 	argv[1] = out;
 	argv[2] = "-I";
-	argv[3] = file;
-	argv[4] = NULL;
+	argv[3] = "--no-osd";
+	argv[4] = file;
+	argv[5] = NULL;
 	this->pid = fork();
 	if (this->pid < 0) { /* Fork error */
 		this->pid = 0;
