@@ -100,6 +100,13 @@ void player_off(struct player *this)
 	this->state = P_DEAD;
 }
 
+const char *player_file(struct player *this)
+{
+	return this == NULL || this->state == P_DEAD
+	     ? NULL
+	     : (const char*)this->file;
+}
+
 static void player_quit(int signum)
 {
 	if (signum == SIGPIPE)

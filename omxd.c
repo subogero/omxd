@@ -186,7 +186,16 @@ static void player(char *cmd, char **files)
 		stop_playback(now);
 		if (*files[0] != 0) {
 			LOG(0, "player: start %s\n", files[0]);
-			now = player_new(files[0], get_output(cmd), P_PLAYING);
+			if (next != NULL &&
+			    strcmp(files[0], player_file(next)) == 0) {
+				now = next;
+				next = NULL;
+				player_cmd(now, "p");
+			} else {
+				now = player_new(files[0],
+				                 get_output(cmd),
+				                 P_PLAYING);
+			}
 		}
 	}
 	if (files[1] != NULL) {
