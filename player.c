@@ -23,6 +23,7 @@ static struct player *find_free(void);
 static struct player *find_pid(pid_t pid);
 
 static void init_opts(void);
+static void log_opts(void);
 
 /* opts.argc is the number of args, excluding the closing NULL */
 static struct { int argc; char **argv; } opts =
@@ -41,6 +42,8 @@ struct player *player_new(char *file, char *out, enum pstate state)
 	pipe(ctrlpipe);
 	opts.argv[opts.argc - 2] = out;
 	opts.argv[opts.argc - 1] = file;
+	opts.argv[opts.argc - 0] = NULL;
+	log_opts();
 	this->pid = fork();
 	if (this->pid < 0) { /* Fork error */
 		this->pid = 0;
@@ -114,7 +117,7 @@ const char *player_file(struct player *this)
 
 void player_add_opt(char *opt)
 {
-	if (opt == NULL) {
+	if (opt == NULL || *opt == 0) {
 		init_opts();
 		return;
 	}
@@ -132,7 +135,8 @@ static void init_opts(void)
 	/* Free the entire argv array if necessary */
 	if (opts.argv != NULL) {
 		int i;
-		for (i = 0; i < opts.argc; ++i) {
+		/* Only the added options are dynamically allocated */
+		for (i = 3; i <= opts.argc - 3; ++i) {
 			if (opts.argv[i] != NULL)
 				free(opts.argv[i]);
 		}
@@ -149,6 +153,13 @@ static void init_opts(void)
 	opts.argv[3] = NULL; /* Audio output option */
 	opts.argv[4] = NULL; /* File */
 	opts.argv[5] = NULL; /* Closing NULL pointer */
+}
+
+static void log_opts(void)
+{
+	int i;
+	for (i = 0; i <= opts.argc; ++i)
+		LOG(0, "argv %d = %s\n", i, opts.argv[i] == NULL ? "NULL" : opts.argv[i]);
 }
 
 static void player_quit(int signum)
