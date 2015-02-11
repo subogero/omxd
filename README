@@ -68,6 +68,11 @@ Client commands:
 
  S	show what's playing now
 
+Pass additional omxplayer options:
+
+ O opts	add omxplayer Options, valid from now on, restart player
+ O	clear additional omxplayer Options, restart player
+
 ## CLIENT MODE
 
 You can call omxd with the above commands as arguments, it writes them

@@ -1,20 +1,23 @@
 .\" Generated with Ronnjs 0.3.8
 .\" http://github.com/kapouer/ronnjs/
 .
-.TH "OMXD" "1" "October 2014" "" ""
+.TH "OMXD" "1" "February 2015" "" ""
 .
 .SH "NAME"
 \fBomxd\fR \-\- daemon to maintain a playlist and play it via omxplayer
 .
 .SH "SYNOPSIS"
+ service omxd start|stop|restart
  omxd [\-d]
+.
+.P
  echo <command> [abs\-path] > /var/run/omxctl
  omxd <command> [rel\-path]
 .
 .SH "DESCRIPTION"
 The omxd daemon plays your playlist even if you\'ve disconnected from your
 Raspberry Pi, to allow the easy implementation of various media centre apps\.
-Typically, start omxd from the /etc/rc\.local stript at boot time\.
+After install, omxd is started automatically at boot\.
 .
 .SH "OPTIONS"
  \-h	Print this help text
@@ -74,6 +77,13 @@ Client commands:
 .P
  S	show what\'s playing now
 .
+.P
+Pass additional omxplayer options:
+.
+.P
+ O opts	add omxplayer Options, valid from now on, restart player
+ O	clear additional omxplayer Options, restart player
+.
 .SH "CLIENT MODE"
 You can call omxd with the above commands as arguments, it writes them
 into /var/run/omxctl, but translates relative paths into absolute ones
@@ -91,6 +101,7 @@ to allow easier testing\.
  /var/local/omxplay	playlist file, actual item indicated by >
  /var/log/omxlog	log file
  /etc/omxd\.conf	defines user to run omxplayer: user=foo
+ /etc/init\.d/omxd	init script
 .
 .fi
 .

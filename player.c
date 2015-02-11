@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <string.h>
+#include <stdlib.h>
 
 static void player_quit(int signum);
 static void drop_priv(void);
@@ -21,8 +22,17 @@ static struct player p[NUM_PLAYERS];
 static struct player *find_free(void);
 static struct player *find_pid(pid_t pid);
 
+static void init_opts(void);
+static void log_opts(void);
+
+/* opts.argc is the number of args, excluding the closing NULL */
+static struct { int argc; char **argv; } opts =
+              {       -1,        NULL, };
+
 struct player *player_new(char *file, char *out, enum pstate state)
 {
+	if (opts.argv == NULL)
+		init_opts();
 	if (file == NULL || *file == 0)
 		return NULL;
 	struct player *this = find_free();
@@ -30,13 +40,10 @@ struct player *player_new(char *file, char *out, enum pstate state)
 		return NULL;
 	int ctrlpipe[2];
 	pipe(ctrlpipe);
-	char *argv[6];
-	argv[0] = "/usr/bin/omxplayer";
-	argv[1] = out;
-	argv[2] = "-I";
-	argv[3] = "--no-osd";
-	argv[4] = file;
-	argv[5] = NULL;
+	opts.argv[opts.argc - 2] = out;
+	opts.argv[opts.argc - 1] = file;
+	opts.argv[opts.argc - 0] = NULL;
+	log_opts();
 	this->pid = fork();
 	if (this->pid < 0) { /* Fork error */
 		this->pid = 0;
@@ -64,7 +71,7 @@ struct player *player_new(char *file, char *out, enum pstate state)
 			dup(ctrlpipe[0]);
 			close(ctrlpipe[0]);
 		}
-		execve(argv[0], argv, NULL);
+		execve(opts.argv[0], opts.argv, NULL);
 		_exit(20);
 	}
 }
@@ -106,6 +113,53 @@ const char *player_file(struct player *this)
 	return this == NULL || this->state == P_DEAD
 	     ? NULL
 	     : (const char*)this->file;
+}
+
+void player_add_opt(char *opt)
+{
+	if (opt == NULL || *opt == 0) {
+		init_opts();
+		return;
+	}
+	opts.argc++;
+	int size = opts.argc + 1;
+	opts.argv = realloc(opts.argv, size * sizeof(char*));
+	int optsize = strlen(opt) + 1; /* Add 1 char for closing zero */
+	int pos_new_opt = size - 4; /* Before closing NULL, file and audio */
+	opts.argv[pos_new_opt] = malloc(optsize * sizeof(char));
+	strcpy(opts.argv[pos_new_opt], opt);
+}
+
+static void init_opts(void)
+{
+	/* Free the entire argv array if necessary */
+	if (opts.argv != NULL) {
+		int i;
+		/* Only the added options are dynamically allocated */
+		for (i = 3; i <= opts.argc - 3; ++i) {
+			if (opts.argv[i] != NULL)
+				free(opts.argv[i]);
+		}
+		free(opts.argv);
+		opts.argv = NULL;
+		opts.argc = -1;
+	}
+	opts.argc = 5;
+	int size = opts.argc + 1;
+	opts.argv = malloc(size * sizeof(char*));
+	opts.argv[0] = "/usr/bin/omxplayer";
+	opts.argv[1] = "-I";
+	opts.argv[2] = "--no-osd";
+	opts.argv[3] = NULL; /* Audio output option */
+	opts.argv[4] = NULL; /* File */
+	opts.argv[5] = NULL; /* Closing NULL pointer */
+}
+
+static void log_opts(void)
+{
+	int i;
+	for (i = 0; i <= opts.argc; ++i)
+		LOG(1, "argv %d = %s\n", i, opts.argv[i] == NULL ? "NULL" : opts.argv[i]);
 }
 
 static void player_quit(int signum)

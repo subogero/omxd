@@ -8,6 +8,7 @@
 #define LIST_CMDS "iaAIHJL.hjnNdDxXgu"
 #define STOP_CMDS "P"
 #define CLIENT_CMDS "S"
+#define OPT_CMDS "O"
 
 /* From player.c */
 #include <unistd.h>
@@ -21,6 +22,7 @@ struct player *player_new(char *file, char *out, enum pstate state);
 void player_cmd(struct player *this, char *cmd);
 void player_off(struct player *this);
 const char *player_file(struct player *this);
+void player_add_opt(char *opt);
 
 /* From omxd.c */
 void quit_callback(struct player *this);
