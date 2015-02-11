@@ -159,7 +159,7 @@ static void log_opts(void)
 {
 	int i;
 	for (i = 0; i <= opts.argc; ++i)
-		LOG(0, "argv %d = %s\n", i, opts.argv[i] == NULL ? "NULL" : opts.argv[i]);
+		LOG(1, "argv %d = %s\n", i, opts.argv[i] == NULL ? "NULL" : opts.argv[i]);
 }
 
 static void player_quit(int signum)
