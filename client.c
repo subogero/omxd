@@ -21,6 +21,7 @@ static void print_list(char *playing);
 static char *is_url(char *file);
 static int cmd_foreach_in(char *cmd);
 static int writecmd(char *cmd);
+static int writeopts(char *cmd, int argc, char *argv[]);
 char file_opening[32];
 static int open_tout(char *file);
 static void open_tout_handler(int signal);
@@ -33,8 +34,12 @@ int client(int argc, char *argv[])
 	/* Check command */
 	if (strchr(CLIENT_CMDS, *cmd) != NULL)
 		return client_cmd(cmd, file);
-	if (strchr(OMX_CMDS LIST_CMDS STOP_CMDS, *cmd) == NULL)
+	if (strchr(OMX_CMDS LIST_CMDS STOP_CMDS OPT_CMDS, *cmd) == NULL)
 		return 11;
+	/* Pass omxplayer options */
+	if (strchr(OPT_CMDS, *cmd)) {
+		return writeopts(cmd, argc, argv);
+	}
 	if (file == NULL)
 		return writecmd(cmd);
 	char line[LINE_LENGTH];
@@ -292,15 +297,31 @@ static int cmd_foreach_in(char *cmd)
 	return 0;
 }
 
+static int writeopts(char *cmd, int argc, char *argv[])
+{
+	char cmds[LINE_LENGTH];
+	*cmds = 0;
+	int i;
+	for (i = 2; i < argc; ++i) {
+		strcat(cmds, cmd);
+		strcat(cmds, " ");
+		strcat(cmds, argv[i]);
+		strcat(cmds, "\n");
+	}
+	strcat(cmds, ".");
+	return writecmd(cmds);
+}
+
 static int writecmd(char *cmd)
 {
-	strcat(cmd, "\n");
+	if (cmd[strlen(cmd)-1] != '\n')
+		strcat(cmd, "\n");
 	const char *const filters[] = {
-		"jpg\n","JPG\n","m3u\n","txt\n","nfo\n","sfv\n","log\n",NULL
+		"jpg\n","JPG\n","jpeg\n","JPEG\n","m3u\n","txt\n","nfo\n","sfv\n","log\n",NULL
 	};
 	int i;
 	for (i = 0; filters[i] != NULL; ++i) {
-		if (strstr(cmd, filters[i]) != NULL)
+		if (*cmd != 'O' && strstr(cmd, filters[i]) != NULL)
 			return 0;
 	}
 	int cmdfd = open_tout("omxctl");

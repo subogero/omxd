@@ -8,6 +8,7 @@
 #define LIST_CMDS "iaAIHJL.hjnNdDxXgu"
 #define STOP_CMDS "P"
 #define CLIENT_CMDS "S"
+#define OPT_CMDS "O"
 
 /* From player.c */
 #include <unistd.h>
