@@ -132,11 +132,13 @@ void player_add_opt(char *opt)
 
 static void init_opts(void)
 {
+	#define ARGC_FIXED 2
+	#define ARGC_DEFAULT (ARGC_FIXED + 2)
 	/* Free the entire argv array if necessary */
 	if (opts.argv != NULL) {
 		int i;
 		/* Only the added options are dynamically allocated */
-		for (i = 3; i <= opts.argc - 3; ++i) {
+		for (i = ARGC_FIXED; i < opts.argc - 2; ++i) {
 			if (opts.argv[i] != NULL)
 				free(opts.argv[i]);
 		}
@@ -144,15 +146,14 @@ static void init_opts(void)
 		opts.argv = NULL;
 		opts.argc = -1;
 	}
-	opts.argc = 5;
+	opts.argc = ARGC_DEFAULT;
 	int size = opts.argc + 1;
 	opts.argv = malloc(size * sizeof(char*));
 	opts.argv[0] = "/usr/bin/omxplayer";
 	opts.argv[1] = "-I";
-	opts.argv[2] = "--no-osd";
-	opts.argv[3] = NULL; /* Audio output option */
-	opts.argv[4] = NULL; /* File */
-	opts.argv[5] = NULL; /* Closing NULL pointer */
+	opts.argv[2] = NULL; /* Audio output option */
+	opts.argv[3] = NULL; /* File */
+	opts.argv[4] = NULL; /* Closing NULL pointer */
 }
 
 static void log_opts(void)
