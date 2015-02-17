@@ -13,7 +13,7 @@ static int daemonize(void);
 static int read_fifo(char *line);
 static int parse(char *line);
 static void player(char *cmd, char **files);
-static void stop_playback(struct player *this);
+static void stop_playback(struct player **this);
 static char *get_output(char *cmd);
 
 static volatile char spinlock;
@@ -169,8 +169,8 @@ static void player(char *cmd, char **files)
 	SPINLOCK_TAKE
 	if (strchr(STOP_CMDS, *cmd) != NULL) {
 		LOG(0, "player: stop all\n");
-		stop_playback(now);
-		stop_playback(next);
+		stop_playback(&now);
+		stop_playback(&next);
 		goto player_end;
 	}
 	if (strchr(OMX_CMDS, *cmd) != NULL && now != NULL ) {
@@ -185,7 +185,7 @@ static void player(char *cmd, char **files)
 		goto player_end;
 	/* Now/next: NULL = leave player alone; "" = destroy player */
 	if (files[0] != NULL) {
-		stop_playback(now);
+		stop_playback(&now);
 		if (*files[0] != 0) {
 			LOG(0, "player: start %s\n", files[0]);
 			if (next != NULL &&
@@ -201,7 +201,7 @@ static void player(char *cmd, char **files)
 		}
 	}
 	if (files[1] != NULL) {
-		stop_playback(next);
+		stop_playback(&next);
 		if (*files[1] != 0) {
 			LOG(1, "player: prime %s\n", files[1]);
 			next = player_new(files[1], get_output(cmd), P_PAUSED);
@@ -212,11 +212,11 @@ player_end:
 }
 
 /* Stop the playback immediately */
-static void stop_playback(struct player *this)
+static void stop_playback(struct player **this)
 {
-	if (this != NULL) {
-		player_off(this);
-		this = NULL;
+	if (*this != NULL) {
+		player_off(*this);
+		*this = NULL;
 	}
 }
 
