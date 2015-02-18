@@ -5,6 +5,7 @@ omxplay
 omxd_help.h
 jar
 m_list
+utils
 omxd.pid
 st
 version.h

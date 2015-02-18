@@ -9,24 +9,26 @@ int loglevel = 0;
 /* Write number in decimal format to file descriptor, printf() is BLOATED!!! */
 int writedec(int fd, int num)
 {
-	int bytes = 0;
-	/* Special case: negative numbers (print neg.sign) */
+	if (num == 0)
+		return write(fd, "0", 1);
+	int neg = 0;
 	if (num < 0) {
-		write(fd, "-", 1);
-		num *= -1;
-		bytes++;
+		neg = 1;
+		num = -num;
 	}
-	/*
-	 * If num >= 10, print More Significant DigitS first by recursive call
-	 * then we print Least Significatn Digit ourselves.
-	 */
-	int msds = num / 10;
-	int lsd = num % 10;
-	if (msds)
-		bytes += writedec(fd, msds);
-	char digit = '0' + lsd;
-	write(fd, &digit, 1);
-	return ++bytes;
+	#define BUF 20
+	char buf[BUF];
+	int n = 19;
+	while (1) {
+		int digit = num % 10;
+		buf[n--] = '0' + digit;
+		num /= 10;
+		if (num == 0)
+			break;
+	}
+	if (neg)
+		buf[n--] = '-';
+	return write(fd, buf + n + 1, BUF - 1 - n);
 }
 
 /* Write a C-string to a file descriptor */

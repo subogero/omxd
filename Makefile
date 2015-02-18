@@ -48,12 +48,14 @@ stop:
 	-killall omxd
 	-killall omxplayer.bin
 clean:
-	-rm omxd m_list omxplay omxlog omxctl omxd_help.h omxd.pid st version.h
+	-rm omxd m_list utils omxplay omxlog omxctl omxd_help.h omxd.pid st version.h
 	-rm rpyt.fifo jar
 	-rm -rf .release
 # Testing
 m_list: test_m_list.c m_list.c utils.c omxd.h
 	gcc -g -o m_list test_m_list.c m_list.c utils.c
+utils: utils.c test_utils.c omxd.h
+	gcc -g -o utils test_utils.c utils.c
 debug: omxd stop
 	strace -p `./omxd -d | sed 's/.*PID //'` -o st &
 ps:
