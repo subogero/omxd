@@ -18,17 +18,17 @@ int writedec(int fd, int num)
 	}
 	#define BUF 20
 	char buf[BUF];
-	int n = 19;
+	int n = BUF;
 	while (1) {
 		int digit = num % 10;
-		buf[n--] = '0' + digit;
+		buf[--n] = '0' + digit;
 		num /= 10;
 		if (num == 0)
 			break;
 	}
 	if (neg)
-		buf[n--] = '-';
-	return write(fd, buf + n + 1, BUF - 1 - n);
+		buf[--n] = '-';
+	return write(fd, buf + n, BUF - n);
 }
 
 /* Write a C-string to a file descriptor */
