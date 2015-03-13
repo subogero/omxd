@@ -32,6 +32,7 @@ int writedec(int fd, int num);
 int writestr(int fd, char *str);
 int printfd(int fd, char *fmt, ...);
 int sscand(char *str, int *num);
+int scatd(char *str, int num);
 
 #include <time.h>
 extern int logfd; /* logfile descriptor */
