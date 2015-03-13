@@ -50,6 +50,7 @@ extern int I_root;
 #define LIST_FILE (I_root ? "/var/local/omxplay" : "omxplay")
 #define LOG_FILE  (I_root ? "/var/log/omxlog"    : "omxlog")
 #define PID_FILE  (I_root ? "/var/run/omxd.pid"  : "omxd.pid")
+#define OMX_FILE  (I_root ? "/var/log/omxplayer.log."  : "omxplayer.log.")
 
 /* From m_list.c */
 char **m_list(char *cmd, char *file);

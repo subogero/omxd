@@ -16,6 +16,7 @@ struct player {
 	int wpipe;
 	enum pstate state;
 	char file[LINE_LENGTH];
+	char logfile[LINE_LENGTH];
 };
 #define NUM_PLAYERS 3
 static struct player p[NUM_PLAYERS];
@@ -44,6 +45,7 @@ struct player *player_new(char *file, char *out, enum pstate state)
 	opts.argv[opts.argc - 1] = file;
 	opts.argv[opts.argc - 0] = NULL;
 	log_opts();
+	strcpy(this->logfile, OMX_FILE);
 	this->pid = fork();
 	if (this->pid < 0) { /* Fork error */
 		this->pid = 0;
@@ -60,12 +62,15 @@ struct player *player_new(char *file, char *out, enum pstate state)
 		signal(SIGCHLD, player_quit);
 		signal(SIGPIPE, player_quit);
 		strcpy(this->file, file);
+		scatd(this->logfile, this->pid);
 		LOG(1, "player_new: PID=%d %s\n", this->pid, file);
 		return this;
 	} else { /* Child: exec omxplayer */
+		scatd(this->logfile, getpid());
+		dup2(creat(this->logfile, 0644), 2);
 		drop_priv();
 		close(ctrlpipe[1]);
-		/* Redirect read end of control pipe to 0 stdin */
+		/* Redirect stdin 0 to read end of control pipe */
 		if (ctrlpipe[0] != 0) {
 			close(0);
 			dup(ctrlpipe[0]);
@@ -106,6 +111,8 @@ void player_off(struct player *this)
 	this->pid = 0;
 	this->file[0] = 0;
 	this->state = P_DEAD;
+	unlink(this->logfile);
+	this->logfile[0] = 0;
 }
 
 const char *player_file(struct player *this)
@@ -178,6 +185,8 @@ static void player_quit(int signum)
 		this->pid = 0;
 		this->file[0] = 0;
 		this->state = P_DEAD;
+		unlink(this->logfile);
+		this->logfile[0] = 0;
 		quit_callback(this);
 	}
 	LOG(1, "player_quit: PID=%d (%d) with %d\n", pid, status);
