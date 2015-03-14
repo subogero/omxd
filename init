@@ -33,7 +33,7 @@ stop() {
   echo -n '[....] Stopping omxd playlist daemon... ' >&2
   kill $PID >/dev/null 2>&1
   killall omxplayer.bin >/dev/null 2>&1
-  rm -f /var/run/omxctl /var/log/omxlog >/dev/null 2>&1
+  rm -f /var/run/omxctl /var/log/omxlog* /var/log/omxstat /var/log/omxplayer.log.* >/dev/null 2>&1
   echo "done.\r[ ok ]" >&2
 }
 
