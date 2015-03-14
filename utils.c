@@ -9,8 +9,6 @@ int loglevel = 0;
 /* Write number in decimal format to file descriptor, printf() is BLOATED!!! */
 int writedec(int fd, int num)
 {
-	if (num == 0)
-		return write(fd, "0", 1);
 	int neg = 0;
 	if (num < 0) {
 		neg = 1;
@@ -74,6 +72,8 @@ int sscand(char *str, int *num)
 	int digits = 0;
 	int number = 0;
 	int sign = 1;
+	if (str == NULL)
+		return 0;
 	if (*str == '-') {
 		str++;
 		sign = -1;
@@ -91,4 +91,29 @@ int sscand(char *str, int *num)
 	number *= sign;
 	*num = number;
 	return digits;
+}
+
+/* Concatenate number in decimal format to string */
+int scatd(char *str, int num)
+{
+	int neg = 0;
+	if (num < 0) {
+		neg = 1;
+		num = -num;
+	}
+	#define BUF 20
+	char buf[BUF + 1];
+	int n = BUF;
+	buf[n] = 0; /* Terminating zero */
+	while (1) {
+		int digit = num % 10;
+		buf[--n] = '0' + digit;
+		num /= 10;
+		if (num == 0)
+			break;
+	}
+	if (neg)
+		buf[--n] = '-';
+	strcat(str, buf + n);
+	return BUF - n;
 }

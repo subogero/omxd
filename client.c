@@ -12,11 +12,7 @@
 #include "omxd.h"
 
 static int client_cmd(char *cmd, char *file);
-static char *player_start(char *line, int *t);
-static char *player_length(char *line, int *t);
-static int player_pause(char *line, int *t);
-static int player_fFrR(char *line, int *t);
-static int player_stop(char *line);
+static int player_length(char *omxp_log);
 static void print_list(char *playing);
 static char *is_url(char *file);
 static int cmd_foreach_in(char *cmd);
@@ -80,139 +76,69 @@ static int client_cmd(char *cmd, char *file)
 {
 	if (*cmd != 'S')
 		return 15;
-	FILE *logfile = fopen("omxlog", "r");
+	/* Open status log file */
+	FILE *logfile = fopen("omxstat", "r");
 	if (logfile == NULL) {
-		logfile = fopen("/var/log/omxlog", "r");
+		logfile = fopen("/var/log/omxstat", "r");
 		if (logfile == NULL)
 			return 15;
 	}
+	/* Vars for line and fields */
 	char line[LINE_LENGTH];
-	char playing[LINE_LENGTH];
-	*playing = 0;
-	int t, t_play, t_start, t_len, t_len_tmp;
-	int paused = 0;
-	int unsorted = 0;
-	char *duration_of = NULL;
-	while (fgets(line, LINE_LENGTH, logfile)) {
-		char *start = player_start(line, &t);
-		if (start != NULL) {
-			strcpy(playing, start);
-			t_len = 0;
-			t_play = 0;
-			t_start = t;
-			paused = 0;
-		}
-		char *dur_of = player_length(line, &t);
-		if (dur_of != NULL) {
-			duration_of = dur_of;
-			t_len_tmp = t;
-		}
-		if (duration_of != NULL && *playing != 0 &&
-		    strstr(duration_of, playing) != NULL)
-			t_len = t_len_tmp;
-		if (player_pause(line, &t)) {
-			if (paused) {
-				t_start = t;
-				paused = 0;
-			} else {
-				t_play += t - t_start;
-				paused  = 1;
-			}
-		}
-		int dt = player_fFrR(line, &t);
-		if (dt) {
-			t_play += dt + t - t_start;
-			if (t_play < 0)
-				t_play = 0;
-			t_start = t;
-		}
-		if (player_stop(line)) {
-			*playing = 0;
-			t_len = 0;
-			t_play = 0;
-		}
-		if (strstr(line, "m_list: unsorted") != NULL)
-			unsorted = (strstr(line, " on") != NULL);
+	char *st;
+	char *playing;
+	int t = time(NULL);
+	int t_last, t_play;
+	if (fgets(line, LINE_LENGTH, logfile) == NULL)
+		st = "Stopped";
+	/* Parse line: timestamp state dt omxplayer.logfile file */
+	sscand(strtok(line, " \n"), &t_last);
+	st = strtok(NULL, " \n");
+	sscand(strtok(NULL, " \n"), &t_play);
+	char *omxp_log = strtok(NULL, " \n");
+	playing = strtok(NULL, "\n");
+	/* Special case: Stopped */
+	if (strncmp(st, "Stopped", 8) == 0) {
+		printfd(1, "Stopped 0/0 \n");
+		return 0;
 	}
-	if (*playing != 0 && !paused)
-		t_play += time(NULL) - t_start;
-	if (*playing == 0)
-		t_play = t_len = 0;
-	char *st = *playing == 0 ? "Stopped"
-	         : paused        ? "Paused"
-	         : unsorted      ? "Shuffle"
-	         :                 "Playing";
+	/* Add dt since last command to t_play if not paused */
+	if (strncmp(st, "Paused", 8) != 0) {
+		t_play += t - t_last;
+	}
+	/* Extract track length from omxplayer log file */
+	int t_len = player_length(omxp_log);
+	/* Print */
 	printfd(1, "%s %d/%d %s\n", st, t_play, t_len, playing);
 	if (file != NULL && strncmp(file, "all", 4) == 0)
 		print_list(playing);
 	return 0;
 }
 
-/* Helpers for logfile reading */
-static char *player_start(char *line, int *t)
+/* Get track length from omxplayer logfile */
+static int player_length(char *omxp_log)
 {
-	if (strstr(line, "player: start ") == NULL &&
-	    strstr(line, "quit_callback: start ") == NULL)
-		return NULL;
-	sscand(line, t);
-	char *track = strstr(line, "start ") + 6;
-	return strtok(track, "\n");
-}
-
-/*
- * Upon finding a "Duration:" line:
- * - return log line from omxplayer that identifies track
- * - write track duration [s] into t
- * Otherwise return NULL and don't touch t
- */
-static char *player_length(char *line, int *t)
-{
-	static char omxinput[LINE_LENGTH] = { 0, };
-	if (strstr(line, "Input #") == line)
-		strcpy(omxinput, line);
-	char tokens[LINE_LENGTH];
-	strcpy(tokens, line);
-	char *key = strtok(tokens, " ");
-	if (strncmp(key, "Duration:", 9) != 0)
-		return NULL;
-	*t = 0;
-	int unit;
-	char *digits = strtok(NULL, ":");
-	sscand(digits, &unit);
-	*t += 3600 * unit;
-	digits = strtok(NULL, ":");
-	sscand(digits, &unit);
-	*t += 60 * unit;
-	digits = strtok(NULL, "., ");
-	sscand(digits, &unit);
-	*t += unit;
-	return omxinput;
-}
-
-static int player_pause(char *line, int *t)
-{
-	if (strstr(line, "player: play/pause") == NULL)
+	if (omxp_log == NULL)
 		return 0;
-	sscand(line, t);
-	return 1;
-}
-
-static int player_fFrR(char *line, int *t)
-{
-	if (strstr(line, "player: send ") == NULL)
+	FILE *log = fopen(omxp_log, "r");
+	if (log == NULL)
 		return 0;
-	sscand(line, t);
-	char *cmd = strstr(line, "send ") + 5;
-	return *cmd == 'f' ?   30
-	     : *cmd == 'F' ?  600
-	     : *cmd == 'r' ?  -30
-	     : *cmd == 'R' ? -600
-	     :                  0;
-}
-
-static int player_stop(char *line)
-{
-	return strstr(line, "player: stop all") != NULL;
+	int t = 0;
+	char line[LINE_LENGTH];
+	while (fgets(line, LINE_LENGTH, log)) {
+		if (strncmp(strtok(line, " "), "Duration:", 9) != 0)
+			continue;
+		int unit;
+		sscand(strtok(NULL, ":"), &unit);
+		t += 3600 * unit;
+		sscand(strtok(NULL, ":"), &unit);
+		t += 60 * unit;
+		sscand(strtok(NULL, "., "), &unit);
+		t += unit;
+		break;
+	}
+	fclose(log);
+	return t;
 }
 
 static void print_list(char *playing)
