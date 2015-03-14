@@ -88,6 +88,8 @@ to allow easier testing.
      /var/run/omxctl	FIFO to write commands into
      /var/local/omxplay	playlist file, actual item indicated by >
      /var/log/omxlog	log file
+     /var/log/omxstat	status log file
+     /var/log/omxplayer.log.<pid>
      /etc/omxd.conf	defines user to run omxplayer: user=foo
      /etc/init.d/omxd	init script
 .
