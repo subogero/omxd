@@ -72,6 +72,8 @@ int sscand(char *str, int *num)
 	int digits = 0;
 	int number = 0;
 	int sign = 1;
+	if (str == NULL)
+		return 0;
 	if (*str == '-') {
 		str++;
 		sign = -1;
