@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 
 static void player_quit(int signum);
 static void drop_priv(void);
@@ -14,6 +15,8 @@ static void drop_priv(void);
 struct player {
 	pid_t pid;
 	int wpipe;
+	int t_lastcmd;
+	int dt;
 	enum pstate state;
 	char file[LINE_LENGTH];
 	char logfile[LINE_LENGTH];
@@ -39,6 +42,10 @@ struct player *player_new(char *file, char *out, enum pstate state)
 	struct player *this = find_free();
 	if (this == NULL)
 		return NULL;
+	/* Timekeeping */
+	this->t_lastcmd = time(NULL);
+	this->dt = 0;
+	/* IPC, args */
 	int ctrlpipe[2];
 	pipe(ctrlpipe);
 	opts.argv[opts.argc - 2] = out;
@@ -87,6 +94,20 @@ void player_cmd(struct player *this, char *cmd)
 		return;
 	if (strchr(OMX_CMDS, *cmd) == NULL)
 		return;
+	/* Timekeeping */
+	int t = time(NULL);
+	if (this->state == P_PLAYING)
+		this->dt += t - this->t_lastcmd;
+	this->t_lastcmd = t;
+	this->dt += *cmd == 'F' ?  600
+	          : *cmd == 'R' ? -600
+	          : *cmd == 'f' ?  30
+	          : *cmd == 'r' ? -30
+	          :                0;
+	if (this->dt < 0)
+		this->dt = 0;
+	if (*cmd == 'p')
+		this->state = this->state == P_PLAYING ? P_PAUSED : P_PLAYING;
 	/* Replace FRfr with arrow-key escape sequences */
 	if      (*cmd == 'F')
 		cmd = "\033[A";
@@ -120,6 +141,29 @@ const char *player_file(struct player *this)
 	return this == NULL || this->state == P_DEAD
 	     ? NULL
 	     : (const char*)this->file;
+}
+
+const char *player_logfile(struct player *this)
+{
+	return this == NULL || this->state == P_DEAD
+	     ? NULL
+	     : (const char*)this->logfile;
+}
+
+int player_dt(struct player *this)
+{
+	if (this == NULL || this->state == P_DEAD)
+		return -1;
+	int t = time(NULL);
+	if (this->state == P_PLAYING)
+		this->dt += t - this->t_lastcmd;
+	this->t_lastcmd = t;
+	return this->dt;
+}
+
+enum pstate player_state(struct player *this)
+{
+	return this == NULL ? P_DEAD : this->state;
 }
 
 void player_add_opt(char *opt)

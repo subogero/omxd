@@ -15,6 +15,7 @@ static int parse(char *line);
 static void player(char *cmd, char **files);
 static void stop_playback(struct player **this);
 static char *get_output(char *cmd);
+static void status_log(void);
 
 static volatile char spinlock;
 #define SPINLOCK_TAKE while (spinlock) { usleep(1000); } spinlock = 1;
@@ -179,6 +180,7 @@ static void player(char *cmd, char **files)
 		else
 			LOG(0, "player: send %s\n", cmd)
 		player_cmd(now, cmd);
+		status_log();
 		goto player_end;
 	}
 	if (files == NULL)
@@ -193,10 +195,12 @@ static void player(char *cmd, char **files)
 				now = next;
 				next = NULL;
 				player_cmd(now, "p");
+				status_log();
 			} else {
 				now = player_new(files[0],
 				                 get_output(cmd),
 				                 P_PLAYING);
+				status_log();
 			}
 		}
 	}
@@ -218,6 +222,8 @@ static void stop_playback(struct player **this)
 		player_off(*this);
 		*this = NULL;
 	}
+	if (*this == now)
+		status_log();
 }
 
 /* Signal handler for SIGCHLD when player exits */
@@ -235,6 +241,7 @@ void quit_callback(struct player *this)
 		now = next;
 		next = NULL;
 		player_cmd(now, "p");
+		status_log();
 		now_started = 1;
 	}
 	char **now_next = m_list("n", NULL);
@@ -244,6 +251,7 @@ void quit_callback(struct player *this)
 		LOG(0, "quit_callback: start %s\n", now_next[0]);
 	if (now_next[0] != NULL && !now_started) {
 		now = player_new(now_next[0], get_output("n"), P_PLAYING);
+		status_log();
 	}
 	if (now_next[1] != NULL) {
 		sleep(2);
@@ -272,4 +280,27 @@ static char *get_output(char *cmd)
 	else
 		output_now = output;
 	return outputs[output_now];
+}
+
+static void status_log(void)
+{
+	unlink(STAT_FILE);
+	int fd = creat(STAT_FILE, 0644);
+	/* Format: timestamp state [dt logfile file] */
+	enum pstate state = player_state(now);
+	if (state == P_DEAD)
+		printfd(fd, "%d Stopped\n", time(NULL));
+	else
+		printfd(
+			fd,
+			"%d %s %d %s %s\n",
+			time(NULL),
+			state == P_PAUSED ? "Paused"
+			       : unsorted ? "Shuffle"
+			       :            "Playing",
+			player_dt(now),
+			player_logfile(now),
+			player_file(now)
+		);
+	close(fd);
 }

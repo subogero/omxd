@@ -22,6 +22,9 @@ struct player *player_new(char *file, char *out, enum pstate state);
 void player_cmd(struct player *this, char *cmd);
 void player_off(struct player *this);
 const char *player_file(struct player *this);
+const char *player_logfile(struct player *this);
+int player_dt(struct player *this);
+enum pstate player_state(struct player *this);
 void player_add_opt(char *opt);
 
 /* From omxd.c */
@@ -48,12 +51,14 @@ extern int loglevel;
 /* Filenames */
 extern int I_root;
 #define LIST_FILE (I_root ? "/var/local/omxplay" : "omxplay")
-#define LOG_FILE  (I_root ? "/var/log/omxlog"    : "omxlog")
-#define PID_FILE  (I_root ? "/var/run/omxd.pid"  : "omxd.pid")
-#define OMX_FILE  (I_root ? "/var/log/omxplayer.log."  : "omxplayer.log.")
+#define LOG_FILE  (I_root ? "/var/log/omxlog" : "omxlog")
+#define STAT_FILE (I_root ? "/var/log/omxstat" : "omxstat")
+#define OMX_FILE  (I_root ? "/var/log/omxplayer.log." : "omxplayer.log.")
+#define PID_FILE  (I_root ? "/var/run/omxd.pid" : "omxd.pid")
 
 /* From m_list.c */
 char **m_list(char *cmd, char *file);
+extern char unsorted;
 
 /* From client.c */
 #include <sys/stat.h>

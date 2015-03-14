@@ -6,13 +6,13 @@
 #include <stdlib.h>
 #include "omxd.h"
 
+char unsorted = 0;
 static struct playlist { int i; int size; char **arr_sz; }
 		list = {    -1,        0,          NULL, };
 
 static char *now_next[2];
 static char next_file[LINE_LENGTH];
 static char inserted_next_file = 0;
-static char unsorted = 0;
 
 enum list_pos { L_START, L_ACT, L_END, L_ALL };
 enum e_dirs { D_1ST, D_PREV, D_ACT, D_NEXT, D_LAST, D_NUMOF };
