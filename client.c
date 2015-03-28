@@ -100,7 +100,7 @@ static int client_cmd(char *cmd, char *file)
 	/* Special case: Stopped */
 	if (strncmp(st, "Stopped", 8) == 0) {
 		printfd(1, "Stopped 0/0 \n");
-		return 0;
+		goto client_cmd_print_list;
 	}
 	/* Add dt since last command to t_play if not paused */
 	if (strncmp(st, "Paused", 8) != 0) {
@@ -110,6 +110,7 @@ static int client_cmd(char *cmd, char *file)
 	int t_len = player_length(omxp_log);
 	/* Print */
 	printfd(1, "%s %d/%d %s\n", st, t_play, t_len, playing);
+client_cmd_print_list:
 	if (file != NULL && strncmp(file, "all", 4) == 0)
 		print_list(playing);
 	return 0;
@@ -152,7 +153,7 @@ static void print_list(char *playing)
 	}
 	char line[LINE_LENGTH];
 	while (fgets(line, LINE_LENGTH, play)) {
-		if (*playing != 0 && strstr(line, playing) == line)
+		if (playing != NULL && strstr(line, playing) == line)
 			printf("> ");
 		printf(line);
 	}
