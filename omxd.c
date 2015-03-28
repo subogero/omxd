@@ -50,6 +50,7 @@ int main(int argc, char *argv[])
 	else if (daemon_error < 0)
 		return 0;
 	/* Main loop */
+	status_log();
 	while (1) {
 		char line[LINE_LENGTH];
 		read_fifo(line);
