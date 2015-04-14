@@ -29,10 +29,10 @@ install:
 	cp rpyt.1 $(DESTDIR)/usr/share/man/man1/
 	cp init      $(DESTDIR)/usr/share/doc/omxd/
 	cp logrotate $(DESTDIR)/usr/share/doc/omxd/
-	-perl -ne 'print unless /omxd/' -i $(DESTDIR)/etc/rc.local # Auto migrate from rc.local
+	-perl -lne 'print unless /^omxd$$/' -i $(DESTDIR)/etc/rc.local # Auto migrate from rc.local
 uninstall:
 	-./prerm
-	-perl -ne 'print unless /omxd/' -i $(DESTDIR)/etc/rc.local # Auto migrate from rc.local
+	-perl -lne 'print unless /^omxd$$/' -i $(DESTDIR)/etc/rc.local # Auto migrate from rc.local
 	rm $(DESTDIR)/usr/bin/omxd
 	rm $(DESTDIR)/usr/bin/rpyt
 	rm $(DESTDIR)/usr/share/man/man1/omxd.1
