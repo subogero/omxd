@@ -170,6 +170,8 @@ enum pstate player_state(struct player *this)
 
 void player_add_opt(char *opt)
 {
+	if (opts.argv == NULL)
+		init_opts();
 	if (opt == NULL || *opt == 0) {
 		init_opts();
 		return;
