@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <errno.h>
 
 static void player_quit(int signum);
 static void drop_priv(void);
@@ -27,7 +28,7 @@ static struct player *find_free(void);
 static struct player *find_pid(pid_t pid);
 
 static void init_opts(void);
-static void log_opts(void);
+static void log_opts(char *prefix);
 
 /* opts.argc is the number of args, excluding the closing NULL */
 static struct { int argc; char **argv; } opts =
@@ -51,7 +52,6 @@ struct player *player_new(char *file, char *out, enum pstate state)
 	opts.argv[opts.argc - 2] = out;
 	opts.argv[opts.argc - 1] = file;
 	opts.argv[opts.argc - 0] = NULL;
-	log_opts();
 	strcpy(this->logfile, OMX_FILE);
 	this->pid = fork();
 	if (this->pid < 0) { /* Fork error */
@@ -84,6 +84,8 @@ struct player *player_new(char *file, char *out, enum pstate state)
 			close(ctrlpipe[0]);
 		}
 		execve(opts.argv[0], opts.argv, NULL);
+		logfd = open(LOG_FILE, O_WRONLY|O_APPEND);
+		log_opts(strerror(errno));
 		_exit(20);
 	}
 }
@@ -207,11 +209,16 @@ static void init_opts(void)
 	opts.argv[4] = NULL; /* Closing NULL pointer */
 }
 
-static void log_opts(void)
+static void log_opts(char *prefix)
 {
 	int i;
-	for (i = 0; i <= opts.argc; ++i)
-		LOG(1, "argv %d = %s\n", i, opts.argv[i] == NULL ? "NULL" : opts.argv[i]);
+	char msg[LINE_LENGTH];
+	strcpy(msg, prefix);
+	for (i = 0; i < opts.argc; ++i) {
+		strcat(msg, "  ");
+		strcat(msg, opts.argv[i]);
+	}
+	LOG(0, msg);
 }
 
 static void player_quit(int signum)
