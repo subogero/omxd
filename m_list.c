@@ -10,7 +10,7 @@ char unsorted = 0;
 static struct playlist { int i; int size; char **arr_sz; }
 		list = {    -1,        0,          NULL, };
 
-static char *now_next[2];
+static char *now_next[2] = { NULL, NULL };
 static char next_file[LINE_LENGTH];
 static char inserted_next_file = 0;
 
