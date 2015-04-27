@@ -64,8 +64,6 @@ char **m_list(char *cmd, char *file)
 		now_next[1] = NULL;
 		return now_next;
 	}
-	if (strchr(".hj", *cmd) != NULL)
-		return now_next;
 	if (*cmd == 'X') {
 		delete(L_ALL, 0);
 		return NULL;
@@ -87,6 +85,9 @@ char **m_list(char *cmd, char *file)
 		: *cmd == 'D' ? jump(L_START, dirs[D_PREV])
 		: *cmd == 'g' ? jump(L_START, atoi(file))
 		: *cmd == 'u' ? 0
+		: *cmd == '.' ? 3
+		: *cmd == 'h' ? 3
+		: *cmd == 'j' ? 3
 		:               0;
 	if (list.size <= 1)
 		change &= ~2;

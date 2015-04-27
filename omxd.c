@@ -158,6 +158,7 @@ static int parse(char *line)
 		file++;
 	}
 	if (cmd != NULL && *cmd != 0) {
+		get_output(cmd);
 		player(cmd, m_list(cmd, file));
 	}
 	if (cmd != NULL && *cmd == 'O')
