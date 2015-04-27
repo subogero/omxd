@@ -44,6 +44,11 @@ int main(int argc, char *argv[])
 		else
 			return client(argc, argv);
 	}
+	I_root = geteuid() == 0;
+	if (argc == 1 && !I_root) {
+		writestr(2, "Non-root daemon debug in current dir: omxd -d\n");
+		return -1;
+	}
 	int daemon_error = daemonize();
 	if (daemon_error > 0)
 		return daemon_error;
@@ -63,7 +68,6 @@ int main(int argc, char *argv[])
 /* Fork, umask, SID, chdir, close, logfile, FIFO */
 static int daemonize(void)
 {
-	I_root = geteuid() == 0;
 	/* Fork the real daemon */
 	pid_t pid = fork();
 	if (pid < 0)

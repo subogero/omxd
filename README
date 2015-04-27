@@ -81,7 +81,7 @@ and performs commands recursively if you specify a directory as the file.
 
 ## FILES
 
-When you start the omxd daemon as an unprivileged user the files below
+When you start 'omxd -d' as an unprivileged user the files below
 will be created in the current directory instead of the locations below,
 to allow easier testing.
 
