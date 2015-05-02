@@ -21,6 +21,8 @@ static volatile char spinlock;
 #define SPINLOCK_TAKE while (spinlock) { usleep(1000); } spinlock = 1;
 #define SPINLOCK_RELEASE spinlock = 0;
 
+static char **next_hdmi_filter(char **files);
+
 int main(int argc, char *argv[])
 {
 	/* Help for -h */
@@ -163,7 +165,7 @@ static int parse(char *line)
 	}
 	if (cmd != NULL && *cmd != 0) {
 		get_output(cmd);
-		player(cmd, m_list(cmd, file));
+		player(cmd, next_hdmi_filter(m_list(cmd, file)));
 	}
 	if (cmd != NULL && *cmd == 'O')
 		player_add_opt(file);
@@ -250,7 +252,7 @@ void quit_callback(struct player *this)
 		status_log();
 		now_started = 1;
 	}
-	char **now_next = m_list("n", NULL);
+	char **now_next = next_hdmi_filter(m_list("n", NULL));
 	if (now_next == NULL)
 		goto quit_callback_end;
 	if (now_next[0] != NULL)
@@ -260,12 +262,27 @@ void quit_callback(struct player *this)
 		status_log();
 	}
 	if (now_next[1] != NULL) {
-		sleep(2);
 		LOG(1, "quit_callback: prime %s\n", now_next[1]);
 		next = player_new(now_next[1], get_output("n"), P_PAUSED);
 	}
 quit_callback_end:
 	SPINLOCK_RELEASE
+}
+
+/* Disable low-gap for videos when audio over HDMI */
+static char **next_hdmi_filter(char **files)
+{
+	static char *copy[2] = { NULL, NULL };
+	if (files == NULL)
+		return files;
+	if (files[1] == NULL)
+		return files;
+	if (strcmp("-olocal", get_output(NULL)) == 0)
+		return files;
+	copy[0] = files[0];
+	copy[1] = "";
+	LOG(1, "next_hdmi_filter: disable next\n");
+	return copy;
 }
 
 /* Return omxplayer argument to set output interface (Jack/HDMI) */
@@ -275,7 +292,9 @@ static char *get_output(char *cmd)
 	static char *outputs[] = { "-olocal", "-ohdmi" };
 	static enum e_outputs output = OUT_JACK;
 	enum e_outputs output_now;
-	if      (*cmd == 'h')
+	if (cmd == NULL)
+		output_now = output;
+	else if (*cmd == 'h')
 		output_now = output = OUT_HDMI;
 	else if (*cmd == 'H')
 		output_now = OUT_HDMI;
