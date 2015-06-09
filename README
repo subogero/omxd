@@ -19,6 +19,7 @@ After install, omxd is started automatically at boot.
 
  -h	Print this help text
  -d	Start daemon with debug logging enabled
+ -n	No fork, run in foreground, log to stderr
 
 ## COMMANDS
 

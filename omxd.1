@@ -1,7 +1,7 @@
 .\" Generated with Ronnjs 0.3.8
 .\" http://github.com/kapouer/ronnjs/
 .
-.TH "OMXD" "1" "April 2015" "" ""
+.TH "OMXD" "1" "June 2015" "" ""
 .
 .SH "NAME"
 \fBomxd\fR \-\- daemon to maintain a playlist and play it via omxplayer
@@ -22,6 +22,7 @@ After install, omxd is started automatically at boot\.
 .SH "OPTIONS"
  \-h	Print this help text
  \-d	Start daemon with debug logging enabled
+ \-n	No fork, run in foreground, log to stderr
 .
 .SH "COMMANDS"
 omxd listens for commands through the /var/run/omxctl FIFO,
