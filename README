@@ -49,6 +49,7 @@ Playlist commands: Files shall be absolute paths or URLs playable by omxplayer.
  x num	delete nth item from playlist, counted from zero
  X	delete entire playlist, terminate playback
  u	toggle between unsorted/sorted playback (shuffle)
+ l	toggle looping
 
 Other commands control the running omxplayer instance.
 

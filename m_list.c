@@ -7,6 +7,7 @@
 #include "omxd.h"
 
 char unsorted = 0;
+char loop = 1;
 static struct playlist { int i; int size; char **arr_sz; }
 		list = {    -1,        0,          NULL, };
 
@@ -71,6 +72,10 @@ char **m_list(char *cmd, char *file)
 	if (*cmd == 'u') {
 		unsorted = !unsorted;
 		LOG(0, "m_list: unsorted %s\n", unsorted ? "on" : "off");
+	}
+	if (*cmd == 'l') {
+		loop = !loop;
+		LOG(0, "m_list: loop %s\n", loop ? "on" : "off");
 	}
 	int n = to_num(file);
 	int di = unsorted ? di_random() : 1;
@@ -195,11 +200,14 @@ static int delete(enum list_pos base, int offs)
 
 static int jump(enum list_pos base, int offs)
 {
-	int i = get_pos(base, offs, 1);
+	int i = get_pos(base, offs, loop);
 	if (i >= 0) {
 		list.i = i;
 		update_dirs();
-		return 3;
+		return loop              ? 3
+		     : i < list.size - 1 ? 3
+		     : i < list.size     ? 1
+		     :                     0;
 	}
 	return 0;
 }
