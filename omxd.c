@@ -10,6 +10,7 @@ struct player *now = NULL;
 struct player *next = NULL;
 
 static int daemonize(void);
+static int files(void);
 static int read_fifo(char *line);
 static int parse(char *line);
 static void player(char *cmd, char **files);
@@ -40,9 +41,13 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 	/* Client when called with options */
-	if (argc > 1) {
-		if (strncmp(argv[1], "-d", 3) == 0)
+	int daemon = 1;
+	int arg;
+	for (arg = 1; arg < argc; ++arg) {
+		if (strncmp(argv[arg], "-d", 3) == 0)
 			loglevel = 1;
+		else if (strncmp(argv[arg], "-n", 3) == 0)
+			daemon = 0;
 		else
 			return client(argc, argv);
 	}
@@ -51,11 +56,17 @@ int main(int argc, char *argv[])
 		writestr(2, "Non-root daemon debug in current dir: omxd -d\n");
 		return -1;
 	}
-	int daemon_error = daemonize();
+	/* Daemonize */
+	logfd = 2;
+	int daemon_error = daemon ? daemonize() : 0;
 	if (daemon_error > 0)
 		return daemon_error;
 	else if (daemon_error < 0)
 		return 0;
+	/* Set up FIFO */
+	int files_error = files();
+	if (files_error)
+		return files_error;
 	/* Main loop */
 	status_log();
 	while (1) {
@@ -83,13 +94,9 @@ static int daemonize(void)
 		return -1;
 	}
 	/* umask and session ID */
-	umask(0);
 	pid_t sid = setsid();
 	if (sid < 0)
 		return 2;
-	/* Run in /var/run if invoked as root, or allow testing in CWD */
-	if (I_root && chdir("/var/run/") < 0)
-		return 3;
 	/* Create log file as stdout and stderr */
 	close(2);
 	logfd = creat(LOG_FILE, 0644);
@@ -98,12 +105,22 @@ static int daemonize(void)
 	if (logfd < 0)
 		return 4;
 	LOG(0, "daemonize: omxd started, SID %d\n", sid);
+	return 0;
+}
+
+/* CD, set up files */
+static int files(void)
+{
+	/* Run in /var/run if invoked as root, or allow testing in CWD */
+	if (I_root && chdir("/var/run/") < 0)
+		return 3;
 	/* Create and open FIFO for command input as stdin */
+	umask(0);
 	unlink("omxctl");
-	LOG(1, "daemonize: Deleted original omxctl FIFO\n");
+	LOG(1, "files: Deleted original omxctl FIFO\n");
 	if (mknod("omxctl", S_IFIFO | 0622, 0) < 0)
 		return 6;
-	LOG(1, "daemonize: Created new omxctl FIFO\n");
+	LOG(1, "files: Created new omxctl FIFO\n");
 	return 0;
 }
 
