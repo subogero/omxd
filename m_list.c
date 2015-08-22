@@ -97,7 +97,9 @@ char **m_list(char *cmd, char *file)
 	if (list.size <= 1)
 		change &= ~2;
 	LOG(1, "m_list Change=%d size=%d i=%d\n", change, list.size, list.i);
-	if (change && list.size > 0) {
+	if (!change)
+		return NULL;
+	if (list.size > 0) {
 		int i_next = list.i + 1;
 		if (loop)
 			i_next %= list.size;
@@ -111,7 +113,9 @@ char **m_list(char *cmd, char *file)
 			now_next[1] = "";
 		return now_next;
 	}
-	return NULL;
+	now_next[0] = "";
+	now_next[1] = "";
+	return now_next;
 }
 
 static void load_list(void)
@@ -210,9 +214,8 @@ static int jump(enum list_pos base, int offs)
 	if (i >= 0) {
 		list.i = i;
 		update_dirs();
-		return 3;
 	}
-	return 0;
+	return 3;
 }
 
 static int get_pos(enum list_pos base, int offs, int wrap)

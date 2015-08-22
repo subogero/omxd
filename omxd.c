@@ -272,13 +272,16 @@ void quit_callback(struct player *this)
 	char **now_next = next_hdmi_filter(m_list("n", NULL));
 	if (now_next == NULL)
 		goto quit_callback_end;
-	if (now_next[0] != NULL)
+	if (now_next[0] != NULL && *now_next[0] == 0) {
+		LOG(0, "quit_callback: nothing to play");
+		status_log();
+	}
+	if (now_next[0] != NULL && *now_next[0] && !now_started) {
 		LOG(0, "quit_callback: start %s\n", now_next[0]);
-	if (now_next[0] != NULL && !now_started) {
 		now = player_new(now_next[0], get_output("n"), P_PLAYING);
 		status_log();
 	}
-	if (now_next[1] != NULL) {
+	if (now_next[1] != NULL && *now_next[1]) {
 		LOG(1, "quit_callback: prime %s\n", now_next[1]);
 		next = player_new(now_next[1], get_output("n"), P_PAUSED);
 	}
