@@ -98,10 +98,16 @@ char **m_list(char *cmd, char *file)
 		change &= ~2;
 	LOG(1, "m_list Change=%d size=%d i=%d\n", change, list.size, list.i);
 	if (change && list.size > 0) {
-		int i_next = (list.i + 1) % list.size;
-		now_next[0] = (change & 1) ? list.arr_sz[list.i] : NULL;
-		now_next[1] = (change & 2) ? list.arr_sz[i_next] : NULL;
-		if (unsorted)
+		int i_next = list.i + 1;
+		if (loop)
+			i_next %= list.size;
+		now_next[0] = (change & 1) == 0   ? NULL
+		            : list.i >= list.size ? ""
+		            :                       list.arr_sz[list.i];
+		now_next[1] = (change & 2) == 0   ? NULL
+		            : i_next >= list.size ? ""
+		            :                       list.arr_sz[i_next];
+		if (now_next[1] && unsorted)
 			now_next[1] = "";
 		return now_next;
 	}
@@ -204,10 +210,7 @@ static int jump(enum list_pos base, int offs)
 	if (i >= 0) {
 		list.i = i;
 		update_dirs();
-		return loop              ? 3
-		     : i < list.size - 1 ? 3
-		     : i < list.size     ? 1
-		     :                     0;
+		return 3;
 	}
 	return 0;
 }
