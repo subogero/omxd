@@ -5,7 +5,7 @@
 #define LINE_MAX (LINE_LENGTH - 1)
 
 #define OMX_CMDS "frFRpkoms-+"
-#define LIST_CMDS "iaAIHJL.hjnNdDxXgul"
+#define LIST_CMDS "iaAIHJL.hjnNdDxXgule"
 #define STOP_CMDS "P"
 #define CLIENT_CMDS "S"
 #define OPT_CMDS "O"
@@ -58,7 +58,8 @@ extern int I_root;
 
 /* From m_list.c */
 char **m_list(char *cmd, char *file);
-extern char unsorted;
+enum e_lmode { LOOP, END, SHUFFLE };
+extern enum e_lmode lmode;
 
 /* From client.c */
 #include <sys/stat.h>

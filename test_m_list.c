@@ -14,6 +14,8 @@ int main(void)
 {
 	I_root = 0;
 	logfd = 2;
+	loglevel = 1;
+	print_now_next(m_list("X", NULL));
 	print_now_next(m_list("i", "/foo/1"));
 	print_now_next(m_list("a", "/foo/2"));
 	print_now_next(m_list("A", "/foo/3"));
@@ -34,4 +36,21 @@ int main(void)
 	print_now_next(m_list("n", NULL));
 	print_now_next(m_list("n", NULL));
 	print_now_next(m_list("j", NULL));
+	print_now_next(m_list("u", NULL));
+	print_now_next(m_list("n", NULL));
+	print_now_next(m_list("n", NULL));
+	print_now_next(m_list("n", NULL));
+	print_now_next(m_list("n", NULL));
+	print_now_next(m_list("g", "0"));
+	print_now_next(m_list("e", NULL));
+	print_now_next(m_list("n", NULL));
+	print_now_next(m_list("n", NULL));
+	print_now_next(m_list("n", NULL));
+	print_now_next(m_list("n", NULL));
+	print_now_next(m_list("n", NULL));
+	print_now_next(m_list("n", NULL));
+	print_now_next(m_list("n", NULL));
+	print_now_next(m_list("n", NULL));
+	print_now_next(m_list("n", NULL));
+	return 0;
 }

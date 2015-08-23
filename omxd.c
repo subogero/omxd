@@ -341,7 +341,6 @@ static void status_log(void)
 			"%d %s %d %s %s\n",
 			time(NULL),
 			state == P_PAUSED ? "Paused"
-			       : unsorted ? "Shuffle"
 			       :            "Playing",
 			player_dt(now),
 			player_logfile(now),
