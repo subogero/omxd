@@ -117,6 +117,8 @@ char **m_list(char *cmd, char *file)
 		            :                       list.arr_sz[i_next];
 		if (now_next[1] && lmode == SHUFFLE)
 			now_next[1] = "";
+		if (lmode == END && list.i >= list.size)
+			delete(L_ALL, 0);
 		return now_next;
 	}
 	now_next[0] = "";
