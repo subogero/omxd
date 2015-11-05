@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include "omxd.h"
 
-char unsorted = 0;
+enum e_lmode lmode = LOOP;
 static struct playlist { int i; int size; char **arr_sz; }
 		list = {    -1,        0,          NULL, };
 
@@ -69,11 +69,20 @@ char **m_list(char *cmd, char *file)
 		return NULL;
 	}
 	if (*cmd == 'u') {
-		unsorted = !unsorted;
-		LOG(0, "m_list: unsorted %s\n", unsorted ? "on" : "off");
+		lmode = SHUFFLE;
+		srand(time(NULL));
+		LOG(0, "m_list: unsorted on\n");
+	}
+	if (*cmd == 'l') {
+		lmode = LOOP;
+		LOG(0, "m_list: loop on\n");
+	}
+	if (*cmd == 'e') {
+		lmode = END;
+		LOG(0, "m_list: end on\n");
 	}
 	int n = to_num(file);
-	int di = unsorted ? di_random() : 1;
+	int di = lmode == SHUFFLE ? di_random() : 1;
 	int change =
 		  *cmd == 'i' ? insert(L_ACT, 0, file)
 		: *cmd == 'a' ? insert(L_ACT, 1, file)
@@ -88,19 +97,33 @@ char **m_list(char *cmd, char *file)
 		: *cmd == '.' ? 3
 		: *cmd == 'h' ? 3
 		: *cmd == 'j' ? 3
+		: *cmd == 'u' ? 2
+		: *cmd == 'l' ? 2
 		:               0;
 	if (list.size <= 1)
 		change &= ~2;
 	LOG(1, "m_list Change=%d size=%d i=%d\n", change, list.size, list.i);
-	if (change && list.size > 0) {
-		int i_next = (list.i + 1) % list.size;
-		now_next[0] = (change & 1) ? list.arr_sz[list.i] : NULL;
-		now_next[1] = (change & 2) ? list.arr_sz[i_next] : NULL;
-		if (unsorted)
+	if (!change)
+		return NULL;
+	if (list.size > 0) {
+		int i_next = list.i + 1;
+		if (lmode != END)
+			i_next %= list.size;
+		now_next[0] = (change & 1) == 0   ? NULL
+		            : list.i >= list.size ? ""
+		            :                       list.arr_sz[list.i];
+		now_next[1] = (change & 2) == 0   ? NULL
+		            : i_next >= list.size ? ""
+		            :                       list.arr_sz[i_next];
+		if (now_next[1] && lmode == SHUFFLE)
 			now_next[1] = "";
+		if (lmode == END && list.i >= list.size)
+			delete(L_ALL, 0);
 		return now_next;
 	}
-	return NULL;
+	now_next[0] = "";
+	now_next[1] = "";
+	return now_next;
 }
 
 static void load_list(void)
@@ -195,13 +218,12 @@ static int delete(enum list_pos base, int offs)
 
 static int jump(enum list_pos base, int offs)
 {
-	int i = get_pos(base, offs, 1);
+	int i = get_pos(base, offs, lmode != END);
 	if (i >= 0) {
 		list.i = i;
 		update_dirs();
-		return 3;
 	}
-	return 0;
+	return 3;
 }
 
 static int get_pos(enum list_pos base, int offs, int wrap)
@@ -269,15 +291,12 @@ int to_num(char *file)
 
 int di_random(void)
 {
-	int random = 1;
-	int rfd = open("/dev/urandom", O_RDONLY);
-	if (rfd >= 0) {
-		read(rfd, &random, sizeof random);
-		close(rfd);
-	}
-	LOG(1, "di_random: %d\n", random);
+	if (list.size == 0)
+		return 0;
+	int random = rand() % list.size;
 	/* Never jump zero when playback unsorted */
-	if (random % list.size == 0)
+	if (random == 0)
 		random += list.size / 2;
+	LOG(1, "di_random: %d\n", random);
 	return random;
 }

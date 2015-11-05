@@ -1,7 +1,7 @@
 .\" Generated with Ronnjs 0.3.8
 .\" http://github.com/kapouer/ronnjs/
 .
-.TH "OMXD" "1" "June 2015" "" ""
+.TH "OMXD" "1" "August 2015" "" ""
 .
 .SH "NAME"
 \fBomxd\fR \-\- daemon to maintain a playlist and play it via omxplayer
@@ -53,7 +53,9 @@ Playlist commands: Files shall be absolute paths or URLs playable by omxplayer\.
  x	delete current item from playlist, play next
  x num	delete nth item from playlist, counted from zero
  X	delete entire playlist, terminate playback
- u	toggle between unsorted/sorted playback (shuffle)
+ l	looping playback (default)
+ e	stop at End of playlist
+ u	unsorted playback (shuffle)
 .
 .P
 Other commands control the running omxplayer instance\.
