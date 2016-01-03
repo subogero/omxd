@@ -56,7 +56,9 @@ char **m_list(char *cmd, char *file)
 	if (*cmd == 'L') {
 		strncpy(next_file, file, LINE_LENGTH);
 		inserted_next_file = 1;
-		return NULL;
+		now_next[0] = NULL;
+		now_next[1] = "";
+		return now_next;
 	}
 	if (inserted_next_file && *cmd == 'n') {
 		inserted_next_file = 0;
