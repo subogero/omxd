@@ -273,7 +273,7 @@ void quit_callback(struct player *this)
 	if (now_next == NULL)
 		goto quit_callback_end;
 	if (now_next[0] != NULL && *now_next[0] == 0) {
-		LOG(0, "quit_callback: nothing to play");
+		LOG(0, "quit_callback: nothing to play\n");
 		status_log();
 	}
 	if (now_next[0] != NULL && *now_next[0] && !now_started) {
