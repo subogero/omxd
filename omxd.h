@@ -5,6 +5,7 @@
 #define LINE_MAX (LINE_LENGTH - 1)
 
 #define OMX_CMDS "frFRpkoms-+"
+#define VOL_CMDS "-+"
 #define LIST_CMDS "iaAIHJL.hjnNdDxXgule"
 #define STOP_CMDS "P"
 #define CLIENT_CMDS "S"
@@ -26,6 +27,7 @@ const char *player_logfile(struct player *this);
 int player_dt(struct player *this);
 enum pstate player_state(struct player *this);
 void player_add_opt(char *opt);
+void player_set_vol(int vol_mB); /* Set volume in milliBel */
 
 /* From omxd.c */
 void quit_callback(struct player *this);

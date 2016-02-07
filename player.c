@@ -27,6 +27,8 @@ static struct player p[NUM_PLAYERS];
 static struct player *find_free(void);
 static struct player *find_pid(pid_t pid);
 
+static char vol_sz[11] = "0";
+
 static void init_opts(void);
 static void log_opts(char *prefix);
 
@@ -185,9 +187,17 @@ void player_add_opt(char *opt)
 	strcpy(opts.argv[pos_new_opt], opt);
 }
 
+void player_set_vol(int vol_mB)
+{
+	vol_sz[0] = 0;
+	scatd(vol_sz, vol_mB);
+	if (opts.argv != NULL)
+		opts.argv[3] = vol_sz;
+}
+
 static void init_opts(void)
 {
-	#define ARGC_FIXED 2
+	#define ARGC_FIXED 4
 	#define ARGC_DEFAULT (ARGC_FIXED + 2)
 	/* Free the entire argv array if necessary */
 	if (opts.argv != NULL) {
@@ -206,9 +216,11 @@ static void init_opts(void)
 	opts.argv = malloc(size * sizeof(char*));
 	opts.argv[0] = "/usr/bin/omxplayer";
 	opts.argv[1] = "-I";
-	opts.argv[2] = NULL; /* Audio output option */
-	opts.argv[3] = NULL; /* File */
-	opts.argv[4] = NULL; /* Closing NULL pointer */
+	opts.argv[2] = "--vol";
+	opts.argv[3] = vol_sz;
+	opts.argv[4] = NULL; /* Audio output option */
+	opts.argv[5] = NULL; /* File */
+	opts.argv[6] = NULL; /* Closing NULL pointer */
 }
 
 static void log_opts(char *prefix)

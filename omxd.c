@@ -24,6 +24,8 @@ static volatile char spinlock;
 
 static char **next_hdmi_filter(char **files);
 
+static int vol_mB = 0;
+
 int main(int argc, char *argv[])
 {
 	/* Help for -h */
@@ -205,6 +207,15 @@ static void player(char *cmd, char **files)
 		else
 			LOG(0, "player: send %s\n", cmd)
 		player_cmd(now, cmd);
+		if (strchr(VOL_CMDS, *cmd) != NULL) {
+		        if (*cmd == '-')
+				vol_mB -= 300;
+		        else if (*cmd == '+')
+				vol_mB += 300;
+		        player_set_vol(vol_mB);
+		        if (next != NULL)
+				player_cmd(next, cmd);
+		}
 		status_log();
 		goto player_end;
 	}
