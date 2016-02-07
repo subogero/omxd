@@ -151,13 +151,12 @@ static void save_list(void)
 		unlink(LIST_FILE);
 		return;
 	}
-	FILE *play = fopen(LIST_FILE, "w");
+	int play = creat(LIST_FILE, 0644);
 	int i;
-	for (i = 0; i < list.size; ++i) {
-		fputs(list.arr_sz[i], play);
-		fputs("\n", play);
-	}
-	fclose(play);
+	for (i = 0; i < list.size; ++i)
+		printfd(play, "%s\n", list.arr_sz[i]);
+	fsync(play);
+	close(play);
 }
 
 static int insert(enum list_pos base, int offs, char *file)
