@@ -19,7 +19,8 @@ install:
 	cp omxd $(DESTDIR)/usr/bin
 	cp omxd.1 $(DESTDIR)/usr/share/man/man1/
 	-mkdir -p $(DESTDIR)/usr/share/doc/omxd
-	cp init      $(DESTDIR)/usr/share/doc/omxd/
+	cp init $(DESTDIR)/usr/share/doc/omxd/
+	cp omxd.service $(DESTDIR)/usr/share/doc/omxd/
 	cp logrotate $(DESTDIR)/usr/share/doc/omxd/
 	-perl -lne 'print unless /^omxd$$/' -i $(DESTDIR)/etc/rc.local # Auto migrate from rc.local
 uninstall:

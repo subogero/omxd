@@ -1,4 +1,11 @@
 #!/bin/sh
-update-rc.d omxd remove
-rm /etc/init.d/omxd
-rm /etc/logrotate.d/omxd
+echo Running omxd postrm >&2
+if pidof systemd; then
+	systemctl stop omxd || true
+	systemctl disable omxd || true
+else
+	update-rc.d omxd remove || true
+	rm /etc/init.d/omxd || true
+fi
+
+rm /etc/logrotate.d/omxd || true

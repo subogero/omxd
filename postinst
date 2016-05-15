@@ -1,6 +1,13 @@
 #!/bin/sh
-cp /usr/share/doc/omxd/init /etc/init.d/omxd
-chmod +x /etc/init.d/omxd
+echo Running omxd postinst >&2
 cp /usr/share/doc/omxd/logrotate /etc/logrotate.d/omxd
-update-rc.d omxd defaults
-service omxd start
+
+if pidof systemd; then
+	systemctl enable /usr/share/doc/omxd/omxd.service
+	systemctl start omxd
+else
+	cp /usr/share/doc/omxd/init /etc/init.d/omxd
+	chmod +x /etc/init.d/omxd
+	update-rc.d omxd defaults
+	service omxd start
+fi

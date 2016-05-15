@@ -1,2 +1,4 @@
 #!/bin/sh
+echo Running omxd preinst >&2
 service omxd stop || true
+systemctl omxd stop || true

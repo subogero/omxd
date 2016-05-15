@@ -1,0 +1,11 @@
+[Unit]
+Description=omxd media player daemon
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/omxd
+Type=forking
+
+[Install]
+WantedBy=multi-user.target
+Alias=omxd
