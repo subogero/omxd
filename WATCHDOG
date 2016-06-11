@@ -1,0 +1,56 @@
+omxplayer stuck at end
+======================
+
+Processes
+---------
+cucc     13334 23680  0 15:33 ?        00:00:00 [omxplayer] <defunct>
+szg      13632 13265  0 15:43 pts/0    00:00:00 grep --color=auto omx
+root     23680     1  0 Jun09 ?        00:00:00 /usr/bin/omxd
+
+Note: 2016.06.11 15:33 is 1465651980..1465652040
+
+Process tree
+------------
+           |-omxd(23680)---omxplayer(13334,cucc)
+
+Fact 1
+------
+omxd left behind a zombie omxplayer
+
+omxd status log
+---------------
+1465652039 Playing 0 /var/log/omxplayer.log.13334 /var/tmp/remotepi/.u2bfifo
+
+omxd log
+--------
+1465633321 main: P
+1465633321 player: stop all
+1465633321 main: 
+1465633330 main: g 0
+1465633330 player: start /home/cucc/music/Bob Marley/Babylon By Bus/01 Positive Vibration.mp3
+1465633330 main: 
+1465633397 main: P
+1465633397 player: stop all
+1465633397 main: 
+1465651970 main: J /var/tmp/remotepi/.u2bfifo
+1465651970 player: start /var/tmp/remotepi/.u2bfifo
+1465651970 main: 
+1465652039 main: H /var/tmp/remotepi/.u2bfifo
+1465652039 player: start /var/tmp/remotepi/.u2bfifo
+1465652039 main: 
+
+Fact 2
+------
+The zombie is the last omxplayer instance, restarted with H instead of J.
+Start time:       1465652039
+Alleged end time: 1465652359 (video length 320s)
+
+Fact 3
+------
+/var/log/omxplayer.log.13334 still exists.
+SIGCHLD handler player_quit() not called at all?
+
+Fact 4
+------
+After manually starting next track, it also hangs at the end.
+The original 13334 zombie disappeared, replaced by new zombie.
