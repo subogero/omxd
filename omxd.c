@@ -73,8 +73,8 @@ int main(int argc, char *argv[])
 	status_log();
 	while (1) {
 		char line[LINE_LENGTH];
-		read_fifo(line);
-		LOG(0, "main: %s\n", line);
+		if (read_fifo(line))
+			LOG(0, "main: %s\n", line);
 		parse(line);
 	}
 	return 0;
@@ -196,16 +196,16 @@ static void player(char *cmd, char **files)
 {
 	SPINLOCK_TAKE
 	if (strchr(STOP_CMDS, *cmd) != NULL) {
-		LOG(0, "player: stop all\n");
+		LOG(1, "player: stop all\n");
 		stop_playback(&now);
 		stop_playback(&next);
 		goto player_end;
 	}
 	if (strchr(OMX_CMDS, *cmd) != NULL && now != NULL ) {
 		if (*cmd == 'p')
-			LOG(0, "player: play/pause\n")
+			LOG(1, "player: play/pause\n")
 		else
-			LOG(0, "player: send %s\n", cmd)
+			LOG(1, "player: send %s\n", cmd)
 		player_cmd(now, cmd);
 		if (strchr(VOL_CMDS, *cmd) != NULL) {
 		        if (*cmd == '-')
@@ -225,7 +225,7 @@ static void player(char *cmd, char **files)
 	if (files[0] != NULL) {
 		stop_playback(&now);
 		if (*files[0] != 0) {
-			LOG(0, "player: start %s\n", files[0]);
+			LOG(1, "player: start %s\n", files[0]);
 			if (next != NULL &&
 			    strcmp(files[0], player_file(next)) == 0) {
 				now = next;
