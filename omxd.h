@@ -67,5 +67,6 @@ extern enum e_lmode lmode;
 #include <sys/stat.h>
 mode_t get_ftype(char *file);
 int client(int argc, char *argv[]);
+int parse_status(char *st, char *playing, int *t_play, int *t_len, int *pid);
 
 #endif

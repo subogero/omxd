@@ -76,6 +76,22 @@ static int client_cmd(char *cmd, char *file)
 {
 	if (*cmd != 'S')
 		return 15;
+	char st[LINE_LENGTH] = { 0, };
+	char playing[LINE_LENGTH] = { 0, };
+	int t_play, t_len;
+	int pid = 0;
+	int res = parse_status(st, playing, &t_play, &t_len, &pid);
+	if (res)
+		return res;
+	/* Print */
+	printfd(1, "%s %d/%d %s\n", st, t_play, t_len, playing);
+	if (file != NULL && strncmp(file, "all", 4) == 0)
+		print_list(playing);
+	return 0;
+}
+
+int parse_status(char *st, char *playing, int *t_play, int *t_len, int *pid)
+{
 	/* Open status log file */
 	FILE *logfile = fopen("omxstat", "r");
 	if (logfile == NULL) {
@@ -85,34 +101,36 @@ static int client_cmd(char *cmd, char *file)
 	}
 	/* Vars for line and fields */
 	char line[LINE_LENGTH];
-	char *st;
-	char *playing;
+	int t_last;
 	int t = time(NULL);
-	int t_last, t_play;
-	if (fgets(line, LINE_LENGTH, logfile) == NULL)
-		st = "Stopped";
+	if (fgets(line, LINE_LENGTH, logfile) == NULL) {
+		fclose(logfile);
+		return 15;
+	}
 	/* Parse line: timestamp state dt omxplayer.logfile file */
 	sscand(strtok(line, " \n"), &t_last);
-	st = strtok(NULL, " \n");
-	sscand(strtok(NULL, " \n"), &t_play);
+	char *tok = strtok(NULL, " \n");
+	if (tok != NULL)
+		strcpy(st, tok);
+	sscand(strtok(NULL, " \n"), t_play);
 	char *omxp_log = strtok(NULL, " \n");
-	playing = strtok(NULL, "\n");
+	sscand(omxp_log + 23, pid); /* Throw away /var/log/omxplayer.log. */
+	tok = strtok(NULL, "\n");
+	if (tok != NULL)
+		strcpy(playing, tok);
 	/* Special case: Stopped */
 	if (strncmp(st, "Stopped", 8) == 0) {
-		printfd(1, "Stopped 0/0 \n");
-		goto client_cmd_print_list;
+		*t_play = 0;
+		*t_len = 0;
+		playing[0] = 0; /* Empty string */
+	} else {
+		/* Extract track length from omxplayer log file */
+		*t_len = player_length(omxp_log);
+		/* Add dt since last command to t_play if not paused */
+		if (strncmp(st, "Paused", 8) != 0)
+			*t_play += t - t_last;
 	}
-	/* Add dt since last command to t_play if not paused */
-	if (strncmp(st, "Paused", 8) != 0) {
-		t_play += t - t_last;
-	}
-	/* Extract track length from omxplayer log file */
-	int t_len = player_length(omxp_log);
-	/* Print */
-	printfd(1, "%s %d/%d %s\n", st, t_play, t_len, playing);
-client_cmd_print_list:
-	if (file != NULL && strncmp(file, "all", 4) == 0)
-		print_list(playing);
+	fclose(logfile);
 	return 0;
 }
 
