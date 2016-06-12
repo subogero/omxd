@@ -130,7 +130,12 @@ static int player_length(char *omxp_log)
 		if (strncmp(strtok(line, " "), "Duration:", 9) != 0)
 			continue;
 		int unit;
-		sscand(strtok(NULL, ":"), &unit);
+		char *hours = strtok(NULL, ":");
+		if (strlen(hours) != 2 ||
+		    !strchr("0123456789", hours[0]) ||
+		    !strchr("0123456789", hours[1]))
+			return -1;
+		sscand(hours, &unit);
 		t += 3600 * unit;
 		sscand(strtok(NULL, ":"), &unit);
 		t += 60 * unit;
