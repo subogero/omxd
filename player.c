@@ -27,6 +27,8 @@ static struct player p[NUM_PLAYERS];
 static struct player *find_free(void);
 static struct player *find_pid(pid_t pid);
 
+static void player_cleanup(struct player *this);
+
 static char vol_sz[11] = "0";
 
 static void init_opts(void);
@@ -69,7 +71,7 @@ struct player *player_new(char *file, char *out, enum pstate state)
 			write(this->wpipe, "p", 1);
 		this->state = state;
 		signal(SIGCHLD, player_quit);
-		signal(SIGPIPE, player_quit);
+		signal(SIGPIPE, SIG_IGN);
 		strcpy(this->file, file);
 		scatd(this->logfile, this->pid);
 		LOG(1, "player_new: PID=%d %s\n", this->pid, file);
@@ -132,12 +134,7 @@ void player_off(struct player *this)
 		return;
 	LOG(1, "player_off: PID %d\n", this->pid);
 	write(this->wpipe, "q", 1);
-	close(this->wpipe);
-	this->pid = 0;
-	this->file[0] = 0;
-	this->state = P_DEAD;
-	unlink(this->logfile);
-	this->logfile[0] = 0;
+	player_cleanup(this);
 }
 
 const char *player_file(struct player *this)
@@ -237,24 +234,41 @@ static void log_opts(char *prefix)
 
 static void player_quit(int signum)
 {
-	if (signum == SIGPIPE)
-		return;
-	int status;
-	pid_t pid = wait(&status);
-	struct player *this = find_pid(pid);
-	if (this == NULL)
-		return;
-	status = WEXITSTATUS(status);
-	if (this->state != P_DEAD) {
-		close(this->wpipe);
-		this->pid = 0;
-		this->file[0] = 0;
-		this->state = P_DEAD;
-		unlink(this->logfile);
-		this->logfile[0] = 0;
-		quit_callback(this);
+	while (1) {
+		int status;
+		pid_t pid = waitpid(0, &status, WNOHANG);
+		/* pid 0: no processes to reap */
+		if (pid == 0)
+			return;
+		/* pid -1 error: retry if waitpid interrupted by new signal */
+		if (pid == -1) {
+			if (errno == EINTR)
+				continue;
+			return;
+		}
+		/* Clean up player object exited by itself */
+		struct player *this = find_pid(pid);
+		if (this == NULL)
+			return;
+		status = WEXITSTATUS(status);
+		if (this->state != P_DEAD) {
+			player_cleanup(this);
+			quit_callback(this);
+		}
+		LOG(1, "player_quit: PID=%d (%d) with %d\n", pid, status);
 	}
-	LOG(1, "player_quit: PID=%d (%d) with %d\n", pid, status);
+}
+
+static void player_cleanup(struct player *this)
+{
+	if (this == NULL || this->state == P_DEAD)
+		return;
+	close(this->wpipe);
+	this->pid = 0;
+	this->file[0] = 0;
+	this->state = P_DEAD;
+	unlink(this->logfile);
+	this->logfile[0] = 0;
 }
 
 static struct player *find_free(void)
