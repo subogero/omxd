@@ -114,7 +114,8 @@ int parse_status(char *st, char *playing, int *t_play, int *t_len, int *pid)
 		strcpy(st, tok);
 	sscand(strtok(NULL, " \n"), t_play);
 	char *omxp_log = strtok(NULL, " \n");
-	sscand(omxp_log + 23, pid); /* Throw away /var/log/omxplayer.log. */
+	if (omxp_log != NULL)
+		sscand(omxp_log + 23, pid); /* Keep PID from logfile name */
 	tok = strtok(NULL, "\n");
 	if (tok != NULL)
 		strcpy(playing, tok);
