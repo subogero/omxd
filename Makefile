@@ -22,6 +22,7 @@ install:
 	cp init $(DESTDIR)/usr/share/doc/omxd/
 	cp omxd.service $(DESTDIR)/usr/share/doc/omxd/
 	cp logrotate $(DESTDIR)/usr/share/doc/omxd/
+	cp omxwd $(DESTDIR)/usr/bin
 	-perl -lne 'print unless /^omxd$$/' -i $(DESTDIR)/etc/rc.local # Auto migrate from rc.local
 uninstall:
 	-./prerm
@@ -32,6 +33,7 @@ uninstall:
 	-rm $(DESTDIR)/usr/share/man/man1/rpyt.1
 	rm $(DESTDIR)/usr/share/doc/omxd/init
 	rm $(DESTDIR)/usr/share/doc/omxd/logrotate
+	rm $(DESTDIR)/usr/bin/omxwd
 	-./postrm
 start:
 	-./postinst

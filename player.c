@@ -11,6 +11,7 @@
 #include <errno.h>
 
 static void player_quit(int signum);
+static void watchdog(int signum);
 static void drop_priv(void);
 
 struct player {
@@ -38,10 +39,31 @@ static void log_opts(char *prefix);
 static struct { int argc; char **argv; } opts =
               {       -1,        NULL, };
 
+static void watchdog(int signum)
+{
+	char st[LINE_LENGTH] = { 0, };
+	char playing[LINE_LENGTH] = { 0, };
+	int t_play = 0;
+	int t_len = 0;
+	int pid = 0;
+	if (parse_status(st, playing, &t_play, &t_len, &pid) == 0 &&
+	    pid > 0 && t_len > 0 && t_play > t_len) {
+		char cmd[50] = { 0, };
+		strcpy(cmd, "/usr/bin/omxwd ");
+		scatd(cmd, pid);
+		system(cmd);
+	}
+	alarm(10);
+	signal(SIGALRM, watchdog);
+}
+
 struct player *player_new(char *file, char *out, enum pstate state)
 {
-	if (opts.argv == NULL)
+	if (opts.argv == NULL) {
 		init_opts();
+		alarm(10);
+		signal(SIGALRM, watchdog);
+	}
 	if (file == NULL || *file == 0)
 		return NULL;
 	struct player *this = find_free();
