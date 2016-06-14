@@ -7,8 +7,8 @@
 #include "omxd.h"
 
 enum e_lmode lmode = LOOP;
-static struct playlist { int i; int size; char **arr_sz; }
-		list = {    -1,        0,          NULL, };
+static struct playlist { int i; int size; char **arr_sz; int loaded; }
+                list = {    -1,        0,          NULL,          0, };
 
 static char *now_next[2] = { NULL, NULL };
 static char next_file[LINE_LENGTH];
@@ -43,7 +43,7 @@ int di_random(void);
  */
 char **m_list(char *cmd, char *file)
 {
-	if (list.i == -1)
+	if (!list.loaded)
 		load_list();
 	/* Special cases when there is nothing to do */
 	if (cmd == NULL || strchr(LIST_CMDS, *cmd) == NULL)
@@ -142,6 +142,7 @@ static void load_list(void)
 		insert(L_END, 0, file);
 	}
 	fclose(play);
+	list.loaded = 1;
 }
 
 static void save_list(void)
@@ -184,7 +185,8 @@ static int insert(enum list_pos base, int offs, char *file)
 	list.size = size_new;
 	if (list.i > i || list.i < 0)
 		list.i++;
-	save_list();
+	if (list.loaded)
+		save_list();
 	return i == list.i ? 3 : i == list.i+1 ? 2 : 0;
 }
 

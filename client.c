@@ -177,7 +177,8 @@ static void print_list(char *playing)
 	}
 	char line[LINE_LENGTH];
 	while (fgets(line, LINE_LENGTH, play)) {
-		if (playing != NULL && strstr(line, playing) == line)
+		if (playing != NULL && *playing != 0 &&
+		    strstr(line, playing) == line)
 			printf("> ");
 		printf(line);
 	}
