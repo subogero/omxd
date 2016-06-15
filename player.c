@@ -39,6 +39,7 @@ static void log_opts(char *prefix);
 static struct { int argc; char **argv; } opts =
               {       -1,        NULL, };
 
+#define DT_WATCHDOG 5
 static void watchdog(int signum)
 {
 	char st[LINE_LENGTH] = { 0, };
@@ -53,7 +54,7 @@ static void watchdog(int signum)
 		scatd(cmd, pid);
 		system(cmd);
 	}
-	alarm(10);
+	alarm(DT_WATCHDOG);
 	signal(SIGALRM, watchdog);
 }
 
@@ -61,7 +62,7 @@ struct player *player_new(char *file, char *out, enum pstate state)
 {
 	if (opts.argv == NULL) {
 		init_opts();
-		alarm(10);
+		alarm(DT_WATCHDOG);
 		signal(SIGALRM, watchdog);
 	}
 	if (file == NULL || *file == 0)
