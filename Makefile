@@ -42,6 +42,7 @@ stop:
 	-./postrm
 	-killall omxd
 	-killall omxplayer.bin
+restart: stop install start
 clean:
 	-rm omxd m_list utils omxplay omxlog omxctl omxd_help.h omxd.pid st version.h
 	-rm -rf .release
