@@ -152,8 +152,10 @@ static int player_length(char *omxp_log)
 		char *hours = strtok(NULL, ":");
 		if (strlen(hours) != 2 ||
 		    !strchr("0123456789", hours[0]) ||
-		    !strchr("0123456789", hours[1]))
-			return -1;
+		    !strchr("0123456789", hours[1])) {
+			t = -1;
+			break;
+		}
 		sscand(hours, &unit);
 		t += 3600 * unit;
 		sscand(strtok(NULL, ":"), &unit);
