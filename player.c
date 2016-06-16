@@ -260,6 +260,7 @@ static void player_quit(int signum)
 	while (1) {
 		int status;
 		pid_t pid = waitpid(0, &status, WNOHANG);
+		status = WEXITSTATUS(status);
 		/* pid 0: no processes to reap */
 		if (pid == 0)
 			return;
@@ -271,16 +272,15 @@ static void player_quit(int signum)
 				continue;
 			return;
 		}
+		LOG(0, "player_quit: PID=%d with %d\n", pid, status);
 		/* Clean up player object exited by itself */
 		struct player *this = find_pid(pid);
 		if (this == NULL)
 			return;
-		status = WEXITSTATUS(status);
 		if (this->state != P_DEAD) {
 			player_cleanup(this);
 			quit_callback(this);
 		}
-		LOG(0, "player_quit: PID=%d (%d) with %d\n", pid, status);
 	}
 }
 
