@@ -15,6 +15,7 @@ static int read_fifo(char *line);
 static int parse(char *line);
 static void player(char *cmd, char **files);
 static void stop_playback(struct player **this);
+static void stop_all(void);
 static char *get_output(char *cmd);
 static void status_log(void);
 
@@ -197,8 +198,7 @@ static void player(char *cmd, char **files)
 	SPINLOCK_TAKE
 	if (strchr(STOP_CMDS, *cmd) != NULL) {
 		LOG(1, "player: stop all\n");
-		stop_playback(&now);
-		stop_playback(&next);
+		stop_all();
 		goto player_end;
 	}
 	if (strchr(OMX_CMDS, *cmd) != NULL && now != NULL ) {
@@ -260,6 +260,15 @@ static void stop_playback(struct player **this)
 	}
 	if (*this == now)
 		status_log();
+}
+
+static void stop_all(void)
+{
+	player_killall();
+	if (now != NULL)
+		status_log();
+	now = NULL;
+	next = NULL;
 }
 
 /* Signal handler for SIGCHLD when player exits */

@@ -22,6 +22,7 @@ struct player;
 struct player *player_new(char *file, char *out, enum pstate state);
 void player_cmd(struct player *this, char *cmd);
 void player_off(struct player *this);
+void player_killall(void);
 const char *player_file(struct player *this);
 const char *player_logfile(struct player *this);
 int player_dt(struct player *this);

@@ -10,12 +10,19 @@ EOF
 fi
 
 p=$1
+t=`date +%s`
+
+[ -z "$p" ] && echo $t omxwd: killing all >&2
 
 read pid comm state ppid pgrp rest </proc/$$/stat
 
 ps -A -o pgid,ppid,pid,args | grep "^ *$pgrp" \
 | while read pgid ppid pid args; do
 	case "$args" in
-	/usr/bin/omxplayer.bin*) [ -z "$p" -o "$p" = $ppid ] && kill -9 $pid;;
+	/usr/bin/omxplayer.bin*)
+		[ "$p" -a "$p" != $ppid ] && continue
+		echo $t omxwd: kill $pid >&2
+		kill -9 $pid
+		;;
 	esac
 done

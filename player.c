@@ -160,6 +160,15 @@ void player_off(struct player *this)
 	player_cleanup(this);
 }
 
+void player_killall(void)
+{
+	LOG(0, "player_killall\n");
+	int i;
+	for (i = 0; i < NUM_PLAYERS; ++i)
+		player_cleanup(p + i);
+	system("/usr/bin/omxwd");
+}
+
 const char *player_file(struct player *this)
 {
 	return this == NULL || this->state == P_DEAD
