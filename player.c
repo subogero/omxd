@@ -155,9 +155,13 @@ void player_off(struct player *this)
 {
 	if (this == NULL || this->state == P_DEAD)
 		return;
-	LOG(0, "player_off: PID %d\n", this->pid);
-	write(this->wpipe, "q", 1);
+	int pid = this->pid;
+	LOG(0, "player_off: PID %d\n", pid);
 	player_cleanup(this);
+	char cmd[50] = { 0, };
+	strcpy(cmd, "/usr/bin/omxwd ");
+	scatd(cmd, pid);
+	system(cmd);
 }
 
 void player_killall(void)
