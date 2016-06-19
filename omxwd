@@ -21,7 +21,7 @@ ps -A -o pgid,ppid,pid,args | grep "^ *$pgrp" \
 	case "$args" in
 	/usr/bin/omxplayer.bin*)
 		[ "$p" -a "$p" != $ppid ] && continue
-		echo $t omxwd: kill $pid >&2
+		echo $t omxwd: kill omxplayer.bin $pid of omxplayer $ppid >&2
 		kill -9 $pid
 		;;
 	esac
