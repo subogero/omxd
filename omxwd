@@ -21,6 +21,23 @@ ps -A -o pgid,ppid,pid,args | grep "^ *$pgrp" \
 	case "$args" in
 	/usr/bin/omxplayer.bin*)
 		[ "$p" -a "$p" != $ppid ] && continue
+		killed=1
+		echo $t omxwd: kill omxplayer.bin $pid of omxplayer $ppid >&2
+		kill -9 $pid
+		;;
+	esac
+done
+
+# Retry if PID was specified but not found
+[ -z "$p" -o "$killed" ] && exit 0
+
+sleep 0.1
+ps -A -o pgid,ppid,pid,args | grep "^ *$pgrp" \
+| while read pgid ppid pid args; do
+	case "$args" in
+	/usr/bin/omxplayer.bin*)
+		[ "$p" != $ppid ] && continue
+		killed=1
 		echo $t omxwd: kill omxplayer.bin $pid of omxplayer $ppid >&2
 		kill -9 $pid
 		;;
