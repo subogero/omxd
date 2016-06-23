@@ -69,5 +69,6 @@ extern enum e_lmode lmode;
 mode_t get_ftype(char *file);
 int client(int argc, char *argv[]);
 int parse_status(char *st, char *playing, int *t_play, int *t_len, int *pid);
+int player_length(char *omxp_log);
 
 #endif

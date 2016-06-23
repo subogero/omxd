@@ -20,7 +20,7 @@ static char *get_output(char *cmd);
 static void status_log(void);
 
 static volatile char spinlock;
-#define SPINLOCK_TAKE while (spinlock) { usleep(1000); } spinlock = 1;
+#define SPINLOCK_TAKE while (spinlock) {} spinlock = 1;
 #define SPINLOCK_RELEASE spinlock = 0;
 
 static char **next_hdmi_filter(char **files);

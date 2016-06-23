@@ -13,6 +13,7 @@ p=$1
 t=`date +%s`
 
 [ -z "$p" ] && echo $t omxwd: killing all >&2
+[ "$p" ] && echo $t omxwd: killing "$p" >&2
 
 read pid comm state ppid pgrp rest </proc/$$/stat
 

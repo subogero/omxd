@@ -12,7 +12,6 @@
 #include "omxd.h"
 
 static int client_cmd(char *cmd, char *file);
-static int player_length(char *omxp_log);
 static void print_list(char *playing);
 static char *is_url(char *file);
 static int cmd_foreach_in(char *cmd);
@@ -136,7 +135,7 @@ int parse_status(char *st, char *playing, int *t_play, int *t_len, int *pid)
 }
 
 /* Get track length from omxplayer logfile */
-static int player_length(char *omxp_log)
+int player_length(char *omxp_log)
 {
 	if (omxp_log == NULL)
 		return 0;

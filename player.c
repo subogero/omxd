@@ -14,6 +14,8 @@ static void player_quit(int signum);
 static void watchdog(int signum);
 static void drop_priv(void);
 
+static void init(void);
+
 struct player {
 	pid_t pid;
 	int wpipe;
@@ -40,31 +42,36 @@ static struct { int argc; char **argv; } opts =
               {       -1,        NULL, };
 
 #define DT_WATCHDOG 5
+static void init(void)
+{
+	if (opts.argv == NULL) {
+		init_opts();
+		signal(SIGALRM, watchdog);
+		alarm(DT_WATCHDOG);
+	}
+}
+
 static void watchdog(int signum)
 {
-	char st[LINE_LENGTH] = { 0, };
-	char playing[LINE_LENGTH] = { 0, };
-	int t_play = 0;
-	int t_len = 0;
-	int pid = 0;
-	if (parse_status(st, playing, &t_play, &t_len, &pid) == 0 &&
-	    pid > 0 && t_len > 0 && t_play > t_len) {
+	int i;
+	for (i = 0; i < NUM_PLAYERS; ++i) {
+		int t_play = player_dt(p + i);
+		int t_len = player_length(p[i].logfile);
+		if (t_play == -1 || t_len == 0 || t_play <= t_len)
+			continue;
+		LOG(0, "watchdog: t_play = %d, t_len = %d\n", t_play, t_len);
 		char cmd[50] = { 0, };
 		strcpy(cmd, "/usr/bin/omxwd ");
-		scatd(cmd, pid);
+		scatd(cmd, p[i].pid);
 		system(cmd);
 	}
-	alarm(DT_WATCHDOG);
 	signal(SIGALRM, watchdog);
+	alarm(DT_WATCHDOG);
 }
 
 struct player *player_new(char *file, char *out, enum pstate state)
 {
-	if (opts.argv == NULL) {
-		init_opts();
-		alarm(DT_WATCHDOG);
-		signal(SIGALRM, watchdog);
-	}
+	init();
 	if (file == NULL || *file == 0)
 		return NULL;
 	struct player *this = find_free();
@@ -205,8 +212,7 @@ enum pstate player_state(struct player *this)
 
 void player_add_opt(char *opt)
 {
-	if (opts.argv == NULL)
-		init_opts();
+	init();
 	if (opt == NULL || *opt == 0) {
 		init_opts();
 		return;
@@ -222,6 +228,7 @@ void player_add_opt(char *opt)
 
 void player_set_vol(int vol_mB)
 {
+	init();
 	vol_sz[0] = 0;
 	scatd(vol_sz, vol_mB);
 	if (opts.argv != NULL)
