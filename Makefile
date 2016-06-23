@@ -7,7 +7,7 @@ export DESCR
 SHELL := bash
 REL := .release
 omxd: omxd.c omxd.h client.c player.c utils.c m_list.c Makefile omxd_help.h version.h
-	gcc -g -o omxd omxd.c client.c player.c utils.c m_list.c
+	gcc -Wall -g -o omxd omxd.c client.c player.c utils.c m_list.c
 omxd_help.h: README Makefile
 	sed -rn '1,/^\.$$/ s/^(.*)$$/"\1\\n"/p' README >omxd_help.h
 %.h: %.txt Makefile
