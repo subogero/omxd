@@ -57,7 +57,7 @@ static void watchdog(int signum)
 	for (i = 0; i < NUM_PLAYERS; ++i) {
 		int t_play = player_dt(p + i);
 		int t_len = player_length(p[i].logfile);
-		if (t_play == -1 || t_len == 0 || t_play <= t_len)
+		if (t_play == -1 || t_len <= 0 || t_play <= t_len)
 			continue;
 		LOG(0, "watchdog: t_play = %d, t_len = %d\n", t_play, t_len);
 		char cmd[50] = { 0, };
