@@ -132,8 +132,10 @@ static void load_list(void)
 {
 	list.size = 0;
 	FILE *play = fopen(LIST_FILE, "r");
-	if (play == NULL)
+	if (play == NULL) {
+		list.loaded = 1;
 		return;
+	}
 	char line[LINE_LENGTH];
 	while (fgets(line, LINE_LENGTH, play)) {
 		line[strlen(line) - 1] = '\0'; /* Remove trailing linefeed */
@@ -198,7 +200,7 @@ static int delete(enum list_pos base, int offs)
 			free(list.arr_sz[i]);
 		free(list.arr_sz);
 		list.i = -1;
-		list.size =0;
+		list.size = 0;
 		list.arr_sz = NULL;
 		save_list();
 		return 1;
