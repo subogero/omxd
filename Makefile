@@ -7,7 +7,7 @@ export DESCR
 SHELL := bash
 REL := .release
 omxd: omxd.c omxd.h client.c player.c utils.c m_list.c Makefile omxd_help.h version.h
-	gcc -g -o omxd omxd.c client.c player.c utils.c m_list.c
+	gcc -Wall -g -o omxd omxd.c client.c player.c utils.c m_list.c
 omxd_help.h: README Makefile
 	sed -rn '1,/^\.$$/ s/^(.*)$$/"\1\\n"/p' README >omxd_help.h
 %.h: %.txt Makefile
@@ -22,6 +22,7 @@ install:
 	cp init $(DESTDIR)/usr/share/doc/omxd/
 	cp omxd.service $(DESTDIR)/usr/share/doc/omxd/
 	cp logrotate $(DESTDIR)/usr/share/doc/omxd/
+	cp omxwd $(DESTDIR)/usr/bin
 	-perl -lne 'print unless /^omxd$$/' -i $(DESTDIR)/etc/rc.local # Auto migrate from rc.local
 uninstall:
 	-./prerm
@@ -32,6 +33,7 @@ uninstall:
 	-rm $(DESTDIR)/usr/share/man/man1/rpyt.1
 	rm $(DESTDIR)/usr/share/doc/omxd/init
 	rm $(DESTDIR)/usr/share/doc/omxd/logrotate
+	rm $(DESTDIR)/usr/bin/omxwd
 	-./postrm
 start:
 	-./postinst
@@ -40,6 +42,7 @@ stop:
 	-./postrm
 	-killall omxd
 	-killall omxplayer.bin
+restart: stop install start
 clean:
 	-rm omxd m_list utils omxplay omxlog omxctl omxd_help.h omxd.pid st version.h
 	-rm -rf .release

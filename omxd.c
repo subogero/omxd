@@ -15,11 +15,12 @@ static int read_fifo(char *line);
 static int parse(char *line);
 static void player(char *cmd, char **files);
 static void stop_playback(struct player **this);
+static void stop_all(void);
 static char *get_output(char *cmd);
 static void status_log(void);
 
 static volatile char spinlock;
-#define SPINLOCK_TAKE while (spinlock) { usleep(1000); } spinlock = 1;
+#define SPINLOCK_TAKE while (spinlock) {} spinlock = 1;
 #define SPINLOCK_RELEASE spinlock = 0;
 
 static char **next_hdmi_filter(char **files);
@@ -73,8 +74,8 @@ int main(int argc, char *argv[])
 	status_log();
 	while (1) {
 		char line[LINE_LENGTH];
-		read_fifo(line);
-		LOG(0, "main: %s\n", line);
+		if (read_fifo(line))
+			LOG(0, "main: %s\n", line);
 		parse(line);
 	}
 	return 0;
@@ -101,7 +102,7 @@ static int daemonize(void)
 		return 2;
 	/* Create log file as stdout and stderr */
 	close(2);
-	logfd = creat(LOG_FILE, 0644);
+	logfd = open(LOG_FILE, O_WRONLY|O_APPEND, 0644);
 	close(0);
 	close(1);
 	if (logfd < 0)
@@ -196,16 +197,15 @@ static void player(char *cmd, char **files)
 {
 	SPINLOCK_TAKE
 	if (strchr(STOP_CMDS, *cmd) != NULL) {
-		LOG(0, "player: stop all\n");
-		stop_playback(&now);
-		stop_playback(&next);
+		LOG(1, "player: stop all\n");
+		stop_all();
 		goto player_end;
 	}
 	if (strchr(OMX_CMDS, *cmd) != NULL && now != NULL ) {
 		if (*cmd == 'p')
-			LOG(0, "player: play/pause\n")
+			LOG(1, "player: play/pause\n")
 		else
-			LOG(0, "player: send %s\n", cmd)
+			LOG(1, "player: send %s\n", cmd)
 		player_cmd(now, cmd);
 		if (strchr(VOL_CMDS, *cmd) != NULL) {
 		        if (*cmd == '-')
@@ -225,7 +225,7 @@ static void player(char *cmd, char **files)
 	if (files[0] != NULL) {
 		stop_playback(&now);
 		if (*files[0] != 0) {
-			LOG(0, "player: start %s\n", files[0]);
+			LOG(1, "player: start %s\n", files[0]);
 			if (next != NULL &&
 			    strcmp(files[0], player_file(next)) == 0) {
 				now = next;
@@ -260,6 +260,15 @@ static void stop_playback(struct player **this)
 	}
 	if (*this == now)
 		status_log();
+}
+
+static void stop_all(void)
+{
+	player_killall();
+	if (now != NULL)
+		status_log();
+	now = NULL;
+	next = NULL;
 }
 
 /* Signal handler for SIGCHLD when player exits */

@@ -11,7 +11,10 @@
 #include <errno.h>
 
 static void player_quit(int signum);
+static void watchdog(int signum);
 static void drop_priv(void);
+
+static void init(void);
 
 struct player {
 	pid_t pid;
@@ -27,6 +30,8 @@ static struct player p[NUM_PLAYERS];
 static struct player *find_free(void);
 static struct player *find_pid(pid_t pid);
 
+static void player_cleanup(struct player *this);
+
 static char vol_sz[11] = "0";
 
 static void init_opts(void);
@@ -36,10 +41,37 @@ static void log_opts(char *prefix);
 static struct { int argc; char **argv; } opts =
               {       -1,        NULL, };
 
+#define DT_WATCHDOG 5
+static void init(void)
+{
+	if (opts.argv == NULL) {
+		init_opts();
+		signal(SIGALRM, watchdog);
+		alarm(DT_WATCHDOG);
+	}
+}
+
+static void watchdog(int signum)
+{
+	int i;
+	for (i = 0; i < NUM_PLAYERS; ++i) {
+		int t_play = player_dt(p + i);
+		int t_len = player_length(p[i].logfile);
+		if (t_play == -1 || t_len <= 0 || t_play <= t_len)
+			continue;
+		LOG(0, "watchdog: t_play = %d, t_len = %d\n", t_play, t_len);
+		char cmd[50] = { 0, };
+		strcpy(cmd, "/usr/bin/omxwd ");
+		scatd(cmd, p[i].pid);
+		system(cmd);
+	}
+	signal(SIGALRM, watchdog);
+	alarm(DT_WATCHDOG);
+}
+
 struct player *player_new(char *file, char *out, enum pstate state)
 {
-	if (opts.argv == NULL)
-		init_opts();
+	init();
 	if (file == NULL || *file == 0)
 		return NULL;
 	struct player *this = find_free();
@@ -69,10 +101,10 @@ struct player *player_new(char *file, char *out, enum pstate state)
 			write(this->wpipe, "p", 1);
 		this->state = state;
 		signal(SIGCHLD, player_quit);
-		signal(SIGPIPE, player_quit);
+		signal(SIGPIPE, SIG_IGN);
 		strcpy(this->file, file);
 		scatd(this->logfile, this->pid);
-		LOG(1, "player_new: PID=%d %s\n", this->pid, file);
+		LOG(0, "player_new: PID=%d %s\n", this->pid, file);
 		return this;
 	} else { /* Child: exec omxplayer */
 		scatd(this->logfile, getpid());
@@ -122,7 +154,7 @@ void player_cmd(struct player *this, char *cmd)
 	else if (*cmd == 'r')
 		cmd = "\033[D";
 	writestr(this->wpipe, cmd);
-	LOG(1, "player_cmd: Send %s to omxplayer PID/fd %d/%d\n",
+	LOG(0, "player_cmd: Send %s to omxplayer PID/fd %d/%d\n",
 		cmd, this->pid, this->wpipe);
 }
 
@@ -130,14 +162,22 @@ void player_off(struct player *this)
 {
 	if (this == NULL || this->state == P_DEAD)
 		return;
-	LOG(1, "player_off: PID %d\n", this->pid);
-	write(this->wpipe, "q", 1);
-	close(this->wpipe);
-	this->pid = 0;
-	this->file[0] = 0;
-	this->state = P_DEAD;
-	unlink(this->logfile);
-	this->logfile[0] = 0;
+	int pid = this->pid;
+	LOG(0, "player_off: PID %d\n", pid);
+	player_cleanup(this);
+	char cmd[50] = { 0, };
+	strcpy(cmd, "/usr/bin/omxwd ");
+	scatd(cmd, pid);
+	system(cmd);
+}
+
+void player_killall(void)
+{
+	LOG(0, "player_killall\n");
+	int i;
+	for (i = 0; i < NUM_PLAYERS; ++i)
+		player_cleanup(p + i);
+	system("/usr/bin/omxwd");
 }
 
 const char *player_file(struct player *this)
@@ -172,8 +212,7 @@ enum pstate player_state(struct player *this)
 
 void player_add_opt(char *opt)
 {
-	if (opts.argv == NULL)
-		init_opts();
+	init();
 	if (opt == NULL || *opt == 0) {
 		init_opts();
 		return;
@@ -189,6 +228,7 @@ void player_add_opt(char *opt)
 
 void player_set_vol(int vol_mB)
 {
+	init();
 	vol_sz[0] = 0;
 	scatd(vol_sz, vol_mB);
 	if (opts.argv != NULL)
@@ -237,24 +277,43 @@ static void log_opts(char *prefix)
 
 static void player_quit(int signum)
 {
-	if (signum == SIGPIPE)
-		return;
-	int status;
-	pid_t pid = wait(&status);
-	struct player *this = find_pid(pid);
-	if (this == NULL)
-		return;
-	status = WEXITSTATUS(status);
-	if (this->state != P_DEAD) {
-		close(this->wpipe);
-		this->pid = 0;
-		this->file[0] = 0;
-		this->state = P_DEAD;
-		unlink(this->logfile);
-		this->logfile[0] = 0;
-		quit_callback(this);
+	while (1) {
+		int status;
+		pid_t pid = waitpid(0, &status, WNOHANG);
+		status = WEXITSTATUS(status);
+		/* pid 0: no processes to reap */
+		if (pid == 0)
+			return;
+		/* pid -1 error: retry if waitpid interrupted by new signal */
+		if (pid == -1) {
+			int err = errno;
+			LOG(0, "player_quit: %s\n", strerror(err));
+			if (err == EINTR)
+				continue;
+			return;
+		}
+		LOG(0, "player_quit: PID=%d with %d\n", pid, status);
+		/* Clean up player object exited by itself */
+		struct player *this = find_pid(pid);
+		if (this == NULL)
+			return;
+		if (this->state != P_DEAD) {
+			player_cleanup(this);
+			quit_callback(this);
+		}
 	}
-	LOG(1, "player_quit: PID=%d (%d) with %d\n", pid, status);
+}
+
+static void player_cleanup(struct player *this)
+{
+	if (this == NULL || this->state == P_DEAD)
+		return;
+	close(this->wpipe);
+	this->pid = 0;
+	this->file[0] = 0;
+	this->state = P_DEAD;
+	unlink(this->logfile);
+	this->logfile[0] = 0;
 }
 
 static struct player *find_free(void)

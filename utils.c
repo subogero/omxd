@@ -40,7 +40,6 @@ int writestr(int fd, char *str)
 int printfd(int fd, char *fmt, ...)
 {
 	int bytes = 0;
-	int i_val = 0;
 	va_list va;
 	va_start(va, fmt);
 	while (*fmt) {

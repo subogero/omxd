@@ -1,0 +1,46 @@
+#!/bin/sh
+if [ "$1" = -h ]; then
+	cat <<EOF
+omxd watchdog
+Usage: omxwd [pid]
+pid	Optional PID of an omxplayer process.
+Kills all omxplayer.bin processes in pgrp, or just the child of pid.
+EOF
+	exit
+fi
+
+p=$1
+t=`date +%s`
+
+[ -z "$p" ] && echo $t omxwd: killing all >&2
+[ "$p" ] && echo $t omxwd: killing "$p" >&2
+
+read pid comm state ppid pgrp rest </proc/$$/stat
+
+ps -A -o pgid,ppid,pid,args | grep "^ *$pgrp" \
+| while read pgid ppid pid args; do
+	case "$args" in
+	/usr/bin/omxplayer.bin*)
+		[ "$p" -a "$p" != $ppid ] && continue
+		killed=1
+		echo $t omxwd: kill omxplayer.bin $pid of omxplayer $ppid >&2
+		kill -9 $pid
+		;;
+	esac
+done
+
+# Retry if PID was specified but not found
+[ -z "$p" -o "$killed" ] && exit 0
+
+sleep 0.1
+ps -A -o pgid,ppid,pid,args | grep "^ *$pgrp" \
+| while read pgid ppid pid args; do
+	case "$args" in
+	/usr/bin/omxplayer.bin*)
+		[ "$p" != $ppid ] && continue
+		killed=1
+		echo $t omxwd: kill omxplayer.bin $pid of omxplayer $ppid >&2
+		kill -9 $pid
+		;;
+	esac
+done
