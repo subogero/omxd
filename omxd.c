@@ -351,7 +351,7 @@ static char **next_hdmi_filter(char **files)
 		return files;
 	if (files[1] == NULL)
 		return files;
-	if (strcmp("-olocal", get_output(NULL)) == 0)
+	if (!gap && strcmp("-olocal", get_output(NULL)) == 0)
 		return files;
 	copy[0] = files[0];
 	copy[1] = "";
