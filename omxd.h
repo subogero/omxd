@@ -13,6 +13,7 @@
 
 /* From player.c */
 #include <unistd.h>
+extern char user[33];
 enum pstate {
 	P_DEAD,
 	P_PLAYING,

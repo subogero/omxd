@@ -9,6 +9,7 @@
 struct player *now = NULL;
 struct player *next = NULL;
 
+static void read_config(void);
 static int daemonize(void);
 static int files(void);
 static int read_fifo(char *line);
@@ -26,31 +27,37 @@ static volatile char spinlock;
 static char **next_hdmi_filter(char **files);
 
 static int vol_mB = 0;
+static char bg = 1;
+static char gap = 0;
 
 int main(int argc, char *argv[])
 {
 	/* Help for -h */
-	if (argc == 2 && strncmp(argv[1], "-h", 3) == 0) {
+	if (argc == 2 && !strncmp(argv[1], "-h", 3)) {
 		writestr(1,
 #include "omxd_help.h"
 		);
 		return 0;
 	}
 	/* Version for --version */
-	if (argc == 2 && strncmp(argv[1], "--version", 10) == 0) {
+	if (argc == 2 && !strncmp(argv[1], "--version", 10)) {
 		writestr(1,
 #include "version.h"
 		);
 		return 0;
 	}
-	/* Client when called with options */
-	int daemon = 1;
+	/* Config and options */
+	read_config();
 	int arg;
 	for (arg = 1; arg < argc; ++arg) {
-		if (strncmp(argv[arg], "-d", 3) == 0)
+		if (!strncmp(argv[arg], "-d", 3))
 			loglevel = 1;
-		else if (strncmp(argv[arg], "-n", 3) == 0)
-			daemon = 0;
+		else if (!strncmp(argv[arg], "-n", 3))
+			bg = 0;
+		else if (!strncmp(argv[arg], "-g", 3))
+			gap = 1;
+		else if (!strncmp(argv[arg], "-u", 3))
+			strncpy(user, argv[++arg], 32);
 		else
 			return client(argc, argv);
 	}
@@ -61,7 +68,7 @@ int main(int argc, char *argv[])
 	}
 	/* Daemonize */
 	logfd = 2;
-	int daemon_error = daemon ? daemonize() : 0;
+	int daemon_error = bg ? daemonize() : 0;
 	if (daemon_error > 0)
 		return daemon_error;
 	else if (daemon_error < 0)
@@ -79,6 +86,33 @@ int main(int argc, char *argv[])
 		parse(line);
 	}
 	return 0;
+}
+
+/* Config file parsing */
+static void read_config(void)
+{
+	int cfg = open("/etc/omxd.conf", O_RDONLY);
+	if (cfg < 0)
+		return;
+	char buffer[4096];
+	if (read(cfg, buffer, 4096) == 0)
+		return;
+	char *start = buffer;
+	while (1) {
+		char *key = strtok(start, "=");
+		start = NULL;
+		char *val = strtok(start, "\n");
+		if (key == NULL || val == NULL)
+			return;
+		if (!strncmp(key, "debug", 6) && !strncmp(val, "1", 2))
+			loglevel = 1;
+		else if (!strncmp(key, "fg", 3) && !strncmp(val, "1", 2))
+			bg = 0;
+		else if (!strncmp(key, "gap", 4) && !strncmp(val, "1", 2))
+			gap = 1;
+		else if (!strncmp(key, "user", 5))
+			strncpy(user, val, 32);
+	}
 }
 
 /* Fork, umask, SID, chdir, close, logfile, FIFO */
