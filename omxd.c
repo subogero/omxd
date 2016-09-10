@@ -102,7 +102,11 @@ static int daemonize(void)
 		return 2;
 	/* Create log file as stdout and stderr */
 	close(2);
-	logfd = open(LOG_FILE, O_WRONLY|O_APPEND, 0644);
+	struct stat st;
+	if (stat(LOG_FILE, &st) == 0)
+		logfd = open(LOG_FILE, O_WRONLY|O_APPEND, 0644);
+	else
+		logfd = creat(LOG_FILE, 0644);
 	close(0);
 	close(1);
 	if (logfd < 0)
