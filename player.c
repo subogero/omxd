@@ -10,6 +10,8 @@
 #include <time.h>
 #include <errno.h>
 
+char user[33] = { 0, };
+ 
 static void player_quit(int signum);
 static void watchdog(int signum);
 static void drop_priv(void);
@@ -36,6 +38,7 @@ static char vol_sz[11] = "0";
 
 static void init_opts(void);
 static void log_opts(char *prefix);
+
 
 /* opts.argc is the number of args, excluding the closing NULL */
 static struct { int argc; char **argv; } opts =
@@ -337,17 +340,6 @@ static struct player *find_pid(pid_t pid)
 /* Drop root privileges before execing omxplayer */
 static void drop_priv(void)
 {
-	int cfg = open("/etc/omxd.conf", O_RDONLY);
-	if (cfg < 0)
-		return;
-	char buffer[4096];
-	if (read(cfg, buffer, 4096) == 0)
-		return;
-	char *line = strstr(buffer, "user=");
-	if (line == NULL)
-		return;
-	strtok(line, "=");
-	char *user = strtok(NULL, "\n");
 	struct passwd *pwd = getpwnam(user);
 	if (pwd == NULL)
 		return;
