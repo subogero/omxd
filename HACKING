@@ -3,9 +3,19 @@ CODING STYLE
 
 Please use a variant of K&R, the Linux Coding Style:
 https://www.kernel.org/doc/Documentation/CodingStyle
+In short: indent by tabs and display your tabs as 8 spaces.
+Functions should fit in a 80x50 box. Combined with Tabs this also stops the
+"nesting hell".
 
-Also you can/should use C99 features, like variable declarations anywhere.
+Also you can use C99 features, like variable declarations anywhere.
 Please keep the declarations as close to the actual usage as possible.
+
+But DO NOT use C99's bool datatype. It's evil. C is a portable assembler,
+and you should be able to tell a size of each datatype easily, so keep
+your abstract shit away. Also how do you serialize a bool? "true" is a string
+and 1 is a number (Welcome to my spaceship). And I did not even mention
+the chaos when people start comparing variables with true and false.
+Just say no to booleans. There are no booleans in K&R.
 
 COMMITS
 =======
@@ -14,11 +24,35 @@ The first line of commit messages shall summarize the change in 50 characters,
 include an issue id (like #19) at the end of line if relevant.
 Additional details, if any, should follow after a blank line.
 Use headlinese style: http://en.wikipedia.org/wiki/Headlinese
+Use imperative, otherwise people don't know if it describes the bug or the fix.
 Add the important stuff, leave out the fluff. Using words like "project",
 "omxd", "update" and "issue" is almost certainly wrong.
 
 Each commit should be about one single change. For a big change, use a feature
 branch and several small commits.
+
+LIBRARIES
+=========
+
+I hate libraries. I don't even use printf() because it's an unpredictable piece
+of bloatware. Don't introduce getopt for Heaven's sake. I already have a dead
+simple loop for argv[].
+
+SHARED LIBRARIES
+================
+
+If you've still convinced me to introduce your cool indispensable library,
+and you've also included the deb package related changes in your pull request,
+please make sure you link the library statically. Shared libs are mostly evil,
+the current trend of containers is also mostly a cure for them.
+
+DBUS
+====
+
+Do not, under any circumstances, send me Dbus related issues or pull requests.
+I do not deal with Dbus. If you interfere with the Dbus interface of
+omxplayer instances started by omxd, you're on your own. I absolutely and
+positively refuse to help.
 
 TECHNICAL DETAILS
 =================
@@ -42,10 +76,7 @@ user-space buffering. And it was fun to write these, just using bare syscalls.
 Why not store the playlist in memory?
 -------------------------------------
 
-Because that needs a lot of dynamic memory allocation. Which might lead to
-memory leaks. Memory leaks in a daemon are bad.
-The stupid man's way to avoid memory leaks is to avoid malloc() altogether.
-The wise man knows that he is stupid.
+Erm... see the next chapter.
 
 Why store the playlist in memory, then ?!
 -----------------------------------------
