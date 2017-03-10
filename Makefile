@@ -111,7 +111,7 @@ debs:
 	echo 'License: GNU GPL v2'                   >>$(DEB)/copyright
 	echo ' See /usr/share/common-licenses/GPL-2' >>$(DEB)/copyright
 	echo 7 > $(DEB)/compat
-	for i in `git tag | sort -rg`; do git show $$i | sed -n '/^omxd/,/^ --/p'; done \
+	for i in `git tag | grep '^[0-9]' | sort -rV`; do git show $$i | sed -n '/^omxd/,/^ --/p'; done \
 	| sed -r 's/^omxd \((.+)\)$$/omxd (\1-1) UNRELEASED; urgency=low/' \
 	| sed -r 's/^(.{,79}).*/\1/' \
 	> $(DEB)/changelog
