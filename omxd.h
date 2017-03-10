@@ -1,7 +1,7 @@
 #ifndef OMXD_H
 #define OMXD_H
 /* (c) SZABO Gergely <szg@subogero.com>, license GNU GPL v2 */
-#define LINE_LENGTH 512
+#define LINE_LENGTH 1024 
 #define LINE_MAX (LINE_LENGTH - 1)
 
 #define OMX_CMDS "frFRpkoms-+"
