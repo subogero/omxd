@@ -22,7 +22,6 @@ After install, omxd is started automatically at boot.
  -d	Start daemon with debug logging enabled (debug=1)
  -n	No fork, run in foreground, log to stderr (fg=1)
  -g	Gap mode, do not prepare next track (gap=1)
- -u x	Run omxplayer as this user (user=x)
 
 ## COMMANDS
 

@@ -56,8 +56,6 @@ int main(int argc, char *argv[])
 			bg = 0;
 		else if (!strncmp(argv[arg], "-g", 3))
 			gap = 1;
-		else if (!strncmp(argv[arg], "-u", 3))
-			strncpy(user, argv[++arg], 32);
 		else
 			return client(argc, argv);
 	}
@@ -110,8 +108,6 @@ static void read_config(void)
 			bg = 0;
 		else if (!strncmp(key, "gap", 4) && !strncmp(val, "1", 2))
 			gap = 1;
-		else if (!strncmp(key, "user", 5))
-			strncpy(user, val, 32);
 	}
 }
 

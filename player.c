@@ -1,7 +1,5 @@
 /* (c) SZABO Gergely <szg@subogero.com>, license GNU GPL v2 */
 #include "omxd.h"
-#include <pwd.h>
-#include <grp.h>
 #include <signal.h>
 #include <sys/wait.h>
 #include <fcntl.h>
@@ -10,11 +8,8 @@
 #include <time.h>
 #include <errno.h>
 
-char user[33] = { 0, };
- 
 static void player_quit(int signum);
 static void watchdog(int signum);
-static void drop_priv(void);
 
 static void init(void);
 
@@ -112,7 +107,6 @@ struct player *player_new(char *file, char *out, enum pstate state)
 	} else { /* Child: exec omxplayer */
 		scatd(this->logfile, getpid());
 		dup2(creat(this->logfile, 0644), 2);
-		drop_priv();
 		close(ctrlpipe[1]);
 		/* Redirect stdin 0 to read end of control pipe */
 		if (ctrlpipe[0] != 0) {
@@ -335,16 +329,4 @@ static struct player *find_pid(pid_t pid)
 		if (p[i].pid == pid)
 			return p + i;
 	return NULL;
-}
-
-/* Drop root privileges before execing omxplayer */
-static void drop_priv(void)
-{
-	struct passwd *pwd = getpwnam(user);
-	if (pwd == NULL)
-		return;
-	chdir(pwd->pw_dir);
-	initgroups(pwd->pw_name, pwd->pw_gid);
-	setgid(pwd->pw_gid);
-	setuid(pwd->pw_uid);
 }
