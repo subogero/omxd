@@ -4,12 +4,14 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <string.h>
+#include <stdlib.h>
 #include "omxd.h"
 
 struct player *now = NULL;
 struct player *next = NULL;
 
 static void read_config(void);
+static int daemon_running(void);
 static int daemonize(void);
 static int files(void);
 static int read_fifo(char *line);
@@ -60,8 +62,9 @@ int main(int argc, char *argv[])
 			return client(argc, argv);
 	}
 	I_root = geteuid() == 0;
-	if (argc == 1 && !I_root) {
-		writestr(2, "Non-root daemon debug in current dir: omxd -d\n");
+	/* Exit if instance of daemon already running */
+	if (daemon_running()) {
+		printfd(2, "Daemon as uid %d already running\n", geteuid());
 		return -1;
 	}
 	/* Daemonize */
@@ -109,6 +112,16 @@ static void read_config(void)
 		else if (!strncmp(key, "gap", 4) && !strncmp(val, "1", 2))
 			gap = 1;
 	}
+}
+
+/* Check existing instance of omxd daemon running as current user */
+static int daemon_running(void)
+{
+	char cmd[1024] = "ps -Comxd -opid,ppid,uid,command | grep ' 1  *";
+	scatd(cmd, geteuid());
+	strcat(cmd, " '");
+	int not_found = system(cmd);
+	return !not_found;
 }
 
 /* Fork, umask, SID, chdir, close, logfile, FIFO */
