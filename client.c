@@ -255,6 +255,12 @@ static int writeopts(char *cmd, int argc, char *argv[])
 	char cmds[LINE_LENGTH];
 	*cmds = 0;
 	int i;
+	/* cmd O alone: send to FIFO straight away */
+	if (argc <= 2) {
+		strcat(cmds, cmd);
+		strcat(cmds, "\n");
+	}
+	/* cmd O plus options: send O opt LF for each option */
 	for (i = 2; i < argc; ++i) {
 		strcat(cmds, cmd);
 		strcat(cmds, " ");
