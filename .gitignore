@@ -1,7 +1,9 @@
 omxd
 omxlog
-omxplayer*.log
+omxplayer.log.*
+omxplayer.old.log
 omxplay
+omxstat
 omxd_help.h
 jar
 m_list
