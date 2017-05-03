@@ -68,7 +68,9 @@ char **m_list(char *cmd, char *file)
 	}
 	if (*cmd == 'X') {
 		delete(L_ALL, 0);
-		return NULL;
+		now_next[0] = "";
+		now_next[1] = "";
+		return now_next;
 	}
 	if (*cmd == 'u') {
 		lmode = SHUFFLE;
