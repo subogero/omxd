@@ -119,6 +119,8 @@ static int daemon_running(void)
 {
 	char cmd[1024] = "ps -Comxd -opid,ppid,uid,command | grep ' 1  *";
 	scatd(cmd, geteuid());
+	strcat(cmd, " ' | grep -v '^ *");
+	scatd(cmd, getpid());
 	strcat(cmd, " '");
 	int not_found = system(cmd);
 	return !not_found;
