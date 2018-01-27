@@ -4,7 +4,7 @@
 #define LINE_LENGTH 1024 
 #define LINE_MAX (LINE_LENGTH - 1)
 
-#define OMX_CMDS "frFRpkoms-+"
+#define OMX_CMDS "frFRpkKomMs-+"
 #define VOL_CMDS "-+"
 #define LIST_CMDS "iaAIHJL.hjnNdDxXgule"
 #define STOP_CMDS "P"

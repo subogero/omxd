@@ -63,8 +63,10 @@ Other commands control the running omxplayer instance.
  p	play/pause
  P	pause playlist, stop omxplayer
  k	next audio stream
+ K	previous audio stream
  o	next chapter
  m	next subtitle stream
+ M	previous subtitle stream
  s	toggle subtitles
  -	volume down
  +	volume up
