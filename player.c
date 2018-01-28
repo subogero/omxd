@@ -157,6 +157,10 @@ void player_cmd(struct player *this, char *cmd)
 		cmd = "\033[C";
 	else if (*cmd == 'r')
 		cmd = "\033[D";
+	else if (*cmd == 'M')
+		cmd = "n";
+	else if (*cmd == 'K')
+		cmd = "j";
 	writestr(this->wpipe, cmd);
 	LOG(0, "player_cmd: Send %s to omxplayer PID/fd %d/%d\n",
 		cmd, this->pid, this->wpipe);
