@@ -1,3 +1,23 @@
+BUG REPORTS
+===========
+
+Try to describe the circumstances as exactly as possible. Are you using
+extra omxplayer options with the O commend? Don't forget to mention it.
+Also look at the /var/log/omxlog logfile and send relevant details.
+
+If you modify the source of omxd and run into problems, don't create an
+issue pretending it's a bug. I've had multiple cases of long
+discussions about bugs, until eventually it turned out people are running
+their modified code. This is evil and rude and wasting my time.
+
+If you want help with your development efforts, state in the very
+first sentence of the issue that you're running modified code.
+
+What's even better, send a pull request with your changes. That way
+I'll have a chance to help you. Don't be ashamed of your horrible,
+buggy, tasteless, unreadable code. Publishing it is a much better
+option than lying to me and wasting my time.
+
 CODING STYLE
 ============
 

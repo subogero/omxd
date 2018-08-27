@@ -99,3 +99,8 @@ to allow easier testing.
      /var/log/omxplayer.log.<pid>
      /etc/omxd.conf	configuration, see options above
      /etc/init.d/omxd	init script
+
+## BUGS
+
+Fix audio problems in default low-gap mode (without activating Gap mode):
+Add `audio_pwm_mode=0` to the RPi's `/boot/config.txt` file.
